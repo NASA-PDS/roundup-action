@@ -1,0 +1,12 @@
+**/*.egg-info/
+**/*.py[cod]
+**/__pycache__
+**/target/
+*.sublime-*
+.git/
+bin
+develop-eggs/
+parts
+python/
+test/
+venv/

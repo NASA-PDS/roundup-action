@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Stub github_changelog_generator
+#
+# This is just used for development and testing to create bogus changelogs.
+#
+# Note that bin/github_changelog_generator is generated from
+# templates/github_changelog_generator … are you editing the right file?
+#
+# For this stub, we always write to ``./CHANGELOG.md``
+
+PATH=/usr/bin:/bin
+export PATH
+
+cat >> CHANGELOG.md <<EOF
+This is a stub changelog for testing. There is no need to panic.
+EOF
+exit 0

@@ -1,0 +1,35 @@
+# 📡 PDS Engineering: Roundup Action
+# ==================================
+#
+# This is a GitHub action that does a "roundup", our fancy term for
+# continuous integration and delivery. Yee-haw! 🤠
+
+
+---
+
+name: '📡 PDS Engineering: Roundup'
+author: 'Sean Kelly <kelly@seankelly.biz>'
+branding:
+  icon: 'circle'
+  color: 'orange'
+inputs:
+  mode:
+    description: >
+      🤠 What kind of roundup are we doing, such as `stable` or `unstable` or
+      something else? We default to `unstable`.
+    required: false
+    default: 'unstable'
+  # No; let's use GITHUB_WORKSPACE or cwd
+  # context:
+  #   description: >
+  #     🗺 Where should the roundup happen? Defaults to the current working directory.
+  #   required: false
+  #   default: '.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - '--mode'
+    - ${{inputs.mode}}
+
+...

@@ -25,7 +25,9 @@ COPY README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
 COPY src/ ./src
 
 RUN :\
+    ls -l setup.py &&\
     python3 setup.py install &&\
+    ls -l /usr/local/bin/roundup &&\
     :
 
 ENTRYPOINT ["/usr/local/bin/roundup"]

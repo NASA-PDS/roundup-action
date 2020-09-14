@@ -3,7 +3,7 @@
 
 from . import Context
 from .step import Step, StepName
-from .util import NullStep, 
+from .util import NullStep, ChangeLogStep
 import logging
 
 _logger = logging.getLogger(__name__)

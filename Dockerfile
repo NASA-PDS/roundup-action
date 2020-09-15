@@ -8,7 +8,7 @@ FROM nutjob4life/pds-github-actions-base:latest
 # --------
 
 LABEL "com.github.actions.name"="PDS Roundup"
-LABEL "com.github.actions.description"="PDS Roundup is the continuous integration and delivery system for the Planetary Data System 🤠"
+LABEL "com.github.actions.description"="🤠 PDS Roundup is the continuous integration and delivery system for the Planetary Data System 🤠"
 LABEL "com.github.actions.icon"="circle"
 LABEL "com.github.actions.color"="orange"
 

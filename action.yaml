@@ -7,7 +7,7 @@
 
 ---
 
-name: '📡 PDS Engineering: Roundup'
+name: '🤠 PDS Engineering: Roundup'
 author: 'Sean Kelly <kelly@seankelly.biz>'
 branding:
   icon: 'circle'
@@ -19,17 +19,12 @@ inputs:
       something else? We default to `unstable`.
     required: false
     default: 'unstable'
-  # No; let's use GITHUB_WORKSPACE or cwd
-  # context:
-  #   description: >
-  #     🗺 Where should the roundup happen? Defaults to the current working directory.
-  #   required: false
-  #   default: '.'
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
     - '--mode'
     - ${{inputs.mode}}
+    - '--debug'
 
 ...

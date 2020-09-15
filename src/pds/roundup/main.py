@@ -1,12 +1,16 @@
 # encoding: utf-8
 
 
+'''🤠 PDS Roundup: Main entrypoint'''
+
+
 from .context import Context
 from .util import populateEnvVars
 import os, logging, argparse, sys
 
 
 def _parseArgs():
+    '''Parse the command line arguments and return a namespace'''
     parser = argparse.ArgumentParser(
         description='🤠 PDS Roundup helps corral software for the Planetary Data System',
     )
@@ -34,6 +38,7 @@ def _parseArgs():
 
 
 def main():
+    '''Main entrypoint'''
     args = _parseArgs()
     logging.basicConfig(level=args.loglevel)
     context = Context.create(os.getcwd(), populateEnvVars(os.environ))

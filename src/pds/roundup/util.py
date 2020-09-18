@@ -105,7 +105,7 @@ class RequirementsStep(Step):
             '--organization',
             'NASA-PDS',
             '--repository',
-            self.repository(),
+            self.getRepository(),
             '--output',
             'docs/requirements/',
             '--token',

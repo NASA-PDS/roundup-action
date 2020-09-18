@@ -82,11 +82,19 @@ Make a local image for testing:
 ```console
 docker image build --tag pds-roundup:latest .
 docker container run --interactive --tty --rm --name roundup --volume ${PWD}:/mnt --entrypoint /bin/sh pds-roundup:latest
-docker container run --name roundup --workdir /github/workspace --rm --env INPUT_MODE --env HOME --env GITHUB_JOB --env GITHUB_REF --env GITHUB_SHA --env GITHUB_REPOSITORY --env GITHUB_REPOSITORY_OWNER --env GITHUB_RUN_ID --env GITHUB_RUN_NUMBER --env GITHUB_ACTOR --env GITHUB_WORKFLOW --env GITHUB_HEAD_REF --env GITHUB_BASE_REF --env GITHUB_EVENT_NAME --env GITHUB_SERVER_URL --env GITHUB_API_URL --env GITHUB_GRAPHQL_URL --env GITHUB_WORKSPACE --env GITHUB_ACTION --env GITHUB_EVENT_PATH --env GITHUB_PATH --env GITHUB_ENV --env RUNNER_OS --env RUNNER_TOOL_CACHE --env RUNNER_TEMP --env RUNNER_WORKSPACE --env ACTIONS_RUNTIME_URL --env ACTIONS_RUNTIME_TOKEN --env ACTIONS_CACHE_URL --env GITHUB_ACTIONS=true --env CI=true --volume "/home/runner/work/_temp/_github_home":"/github/home" --volume "/home/runner/work/_temp/_github_workflow":"/github/workflow" --volume "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" --volume ${PWD}/test/prototypes/python:"/github/workspace" pds-roundup --mode unstable
-```
+docker container run --interactive --tty --rm --name roundup-dev --workdir /github/workspace --rm --env pypi_username=test --env pypi_password=test --env INPUT_MODE --env HOME --env GITHUB_JOB --env GITHUB_REF --env GITHUB_SHA --env GITHUB_REPOSITORY --env GITHUB_REPOSITORY_OWNER --env GITHUB_RUN_ID --env GITHUB_RUN_NUMBER --env GITHUB_ACTOR --env GITHUB_WORKFLOW --env GITHUB_HEAD_REF --env GITHUB_BASE_REF --env GITHUB_EVENT_NAME --env GITHUB_SERVER_URL --env GITHUB_API_URL --env GITHUB_GRAPHQL_URL --env GITHUB_WORKSPACE --env GITHUB_ACTION --env GITHUB_EVENT_PATH --env GITHUB_PATH --env GITHUB_ENV --env RUNNER_OS --env RUNNER_TOOL_CACHE --env RUNNER_TEMP --env RUNNER_WORKSPACE --env ACTIONS_RUNTIME_URL --env ACTIONS_RUNTIME_TOKEN --env ACTIONS_CACHE_URL --env GITHUB_ACTIONS=true --env CI=true --volume ${PWD}/test/prototypes/python:"/github/workspace" pds-roundup --debug --mode unstable```
 
 Or run it locally:
 
 ```console
 env ADMIN_GITHUB_TOKEN=abc123 GITHUB_REPOSITORY=owner/repo GITHUB_WORKSPACE=/tmp PATH=${PWD}/bin:${PATH} ${PWD}/bin/roundup --debug --mode unstable
 ```
+
+To reproduce the real GitHub environment, you may want to add:
+
+```console
+--volume "/home/runner/work/_temp/_github_home":"/github/home" --volume "/home/runner/work/_temp/_github_workflow":"/github/workflow" --volume "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands"
+```
+
+to the ``docker container run``.
+

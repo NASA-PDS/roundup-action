@@ -4,3 +4,9 @@ __pycache__/
 .*.cfg
 *.egg
 MANIFEST
+build/
+develop-eggs/
+parts/
+dist/
+bin/
+build/

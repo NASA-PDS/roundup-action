@@ -20,14 +20,8 @@ LABEL "maintainer"="Sean Kelly <kelly@seankelly.biz>"
 # Image Details
 # -------------
 
-WORKDIR /usr/src/roundup
-COPY README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
-COPY src/ ./src
-
-RUN :\
-    ls -l setup.py &&\
-    python3 setup.py install &&\
-    ls -l /usr/local/bin/roundup &&\
-    :
-
+WORKDIR    /usr/src/roundup
+COPY       README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
+COPY       src/ ./src
+RUN        python3 setup.py install
 ENTRYPOINT ["/usr/local/bin/roundup"]

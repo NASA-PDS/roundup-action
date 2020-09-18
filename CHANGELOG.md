@@ -13,3 +13,4 @@ A history of changes from release to release.
 The space below is left unintentionally unblank.
 
 This is a stub changelog for testing. There is no need to panic.
+This is a stub changelog for testing. There is no need to panic.

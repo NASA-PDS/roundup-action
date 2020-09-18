@@ -99,8 +99,8 @@ class _GitHubReleaseStep(_PythonStep):
 class _ArtifactPublicationStep(_PythonStep):
     '''A step that publishes artifacts to the Cheeseshop'''
     def execute(self):
-        # 😮 TODO: Use Twine API directly
-        # But I'm in a rush:
+        # 😮 TODO: It'd be more secure to use pyPI access tokens instead of usernames and passwords!
+
         argv = [
             'twine',
             'upload',
@@ -118,6 +118,8 @@ class _ArtifactPublicationStep(_PythonStep):
         ]
         dists = os.path.join(self.assembly.context.cwd, 'dist')
         argv.extend([os.path.join(dists, i) for i in os.listdir(dists) if os.path.isfile(os.path.join(dists, i))])
+        # 😮 TODO: Use Twine API directly
+        # But I'm in a rush:
         exec(argv)
 
 
@@ -125,4 +127,5 @@ class _DocPublicationStep(_PythonStep):
     '''A step that publishes documentation to a website'''
     def execute(self):
         _logger.debug('Python doc publication step; TBD')
-        # 🤔 How do we determine what release
+        # 🤔 How do we determine what release to send artifacts to?
+        # 💡 Here's where we will really use github3.py!

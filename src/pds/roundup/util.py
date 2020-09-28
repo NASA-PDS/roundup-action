@@ -2,13 +2,31 @@
 
 '''🤠 PDS Roundup — Utilities'''
 
-import subprocess, logging, os
+import subprocess, logging
 
 _logger = logging.getLogger(__name__)
 
 
 # Functions
 # =========
+
+def populateEnvVars(env):
+    '''Populate the environment variable mapping in ``env`` with our "standard" set of variables
+    required by a roundup. Return a copy of this modified mapping. Note that we may also log
+    some warning messages if certain expected variables are missing.
+    '''
+    copy = dict(env)
+    pypi_username = copy.get('pypi_username', 'pypi')
+    pypi_password = copy.get('pypi_password', 'secret')
+    copy['pypi_username'] = pypi_username
+    copy['pypi_password'] = pypi_password
+
+    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):
+        if var not in env:
+            _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
+
+    return copy
+
 
 def invoke(argv):
     '''Execute a command within the operating system, returning its output. On any error,
@@ -54,24 +72,6 @@ def invokeGIT(gitArgs):
 
     argv = ['git'] + gitArgs
     return invoke(argv)
-
-
-def populateEnvVars(env):
-    '''Populate the environment variable mapping in ``env`` with our "standard" set of variables
-    required by a roundup. Return a copy of this modified mapping. Note that we may also log
-    some warning messages if certain expected variables are missing.
-    '''
-    copy = dict(env)
-    pypi_username = copy.get('pypi_username', 'pypi')
-    pypi_password = copy.get('pypi_password', 'secret')
-    copy['pypi_username'] = pypi_username
-    copy['pypi_password'] = pypi_password
-
-    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):
-        if var not in env:
-            _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
-
-    return copy
 
 
 def commit(filename, message):

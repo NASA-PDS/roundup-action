@@ -3,8 +3,7 @@
 '''🤠 PDS Roundup: Maven context'''
 
 from . import Context
-from .step import Step, StepName
-from .util import NullStep, ChangeLogStep
+from .step import Step, StepName, NullStep, ChangeLogStep
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -36,11 +35,6 @@ class _UnitTestStep(Step):
 class _IntegrationTestStep(Step):
     def execute(self):
         _logger.debug('Maven integration test step; TBD')
-
-
-class _ChangeLogStep(Step):
-    def execute(self):
-        _logger.debug('Maven changelog step; TBD')
 
 
 class _RequirementsStep(Step):

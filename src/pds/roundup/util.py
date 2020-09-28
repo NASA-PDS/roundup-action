@@ -2,8 +2,7 @@
 
 '''🤠 PDS Roundup — Utilities'''
 
-from .step import Step
-import subprocess, logging
+import subprocess, logging, os
 
 _logger = logging.getLogger(__name__)
 
@@ -11,15 +10,45 @@ _logger = logging.getLogger(__name__)
 # Functions
 # =========
 
-def exec(argv):
+def invoke(argv):
     '''Execute a command within the operating system, returning its output. On any error,
     raise ane exception. The command is the first element of ``argv``, with remaining elements
     being arguments to the command.
     '''
     _logger.debug('🏃‍♀️ Running «%r»', argv)
-    cp = subprocess.run(argv, stdin=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+    cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
     _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout)
-    return cp.stdout
+    return cp.stdout.decode('utf-8')
+
+
+def invokeGIT(gitArgs):
+    '''Execute the ``git`` command with the given ``gitArgs``.'''
+
+    # 😬 The code below is to avoid making ``git`` ask ``ssh`` for a host key
+    # verification. This should only happen with repositories that use ssh as
+    # their remote protocol, which I hope doesn't happen in Github Actions.
+    # In development, though, this could have the side-effect of altering
+    # the user's ``~/.ssh/config`` which is probably a terrible idea, so
+    # I'm disabling this code for now:
+    #
+    # ↓↓↓ Begin disabled code below these arrow ↓↓↓
+    # sshDir = os.path.join(os.environ.get('HOME', '/github/home'), '.ssh')
+    # if not os.path.isdir(sshDir):
+    #     os.mkdir(sshDir)
+    # sshConf = os.path.join(os.path.join(sshDir, 'config'))
+    # hostKeyCheckingFound = False
+    # with open(sshConf, 'r') as f:
+    #     for line in f:
+    #         if 'StrictHostKeyChecking no' in line:
+    #             hostKeyCheckingFound = True
+    #             break
+    # if not hostKeyCheckingFound:
+    #     with open(sshConf, 'a') as f:
+    #         f.write('StrictHostKeyChecking no\n')
+    # ↑↑↑ End disabled code above these arrows ↑↑↑
+
+    argv = ['git'] + gitArgs
+    return invoke(argv)
 
 
 def populateEnvVars(env):
@@ -45,73 +74,8 @@ def commit(filename, message):
     '''
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
-    exec(['git', 'config', '--local', 'user.email', 'pdsen-ci@github.com'])
-    exec(['git', 'config', '--local', 'user.name', 'PDS dev admin'])
-    exec(['git', 'pull', 'origin', 'master'])
-    exec(['git', 'add', filename])
-    exec(['git', 'commit', '--allow-empty', '--message', message])
-
-
-# Classes
-# =======
-
-class NullStep(Step):
-    '''This is a "null" or "no-op" step that does nothing.'''
-    def execute(self):
-        pass
-
-
-class ChangeLogStep(Step):
-    '''This step generates a PDS-style changelog'''
-    _sections = '{"improvements":{"prefix":"**Improvements:**","labels":["Epic"]},"defects":{"prefix":"**Defects:**","labels":["bug"]},"deprecations":{"prefix":"**Deprecations:**","labels":["deprecation"]}}'
-
-    def execute(self):
-        token = self.getToken()
-        if not token:
-            _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate changelog')
-            return
-        exec([
-            'github_changelog_generator',
-            '--user',
-            '--NASA-PDS',
-            '--project',
-            self.getRepository(),
-            '--output',
-            'CHANGELOG.md',
-            '--token',
-            token,
-            '--configure-sections',
-            self._sections,
-            '--no-pull-requests',
-            '--issues-label',
-            '**Other closed issues:**',
-            '--issue-line-labels',
-            'high,low,medium'
-        ])
-        commit('CHANGELOG.md', 'Update changelog')
-
-
-class RequirementsStep(Step):
-    '''This step generates a PDS-style requirements file'''
-    def execute(self):
-        token = self.getToken()
-        if not token:
-            _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate requirements')
-            return
-        argv = [
-            'requirement-report',
-            '--format',
-            'md',
-            '--organization',
-            'NASA-PDS',
-            '--repository',
-            self.getRepository(),
-            '--output',
-            'docs/requirements/',
-            '--token',
-            token
-        ]
-        if not self.assembly.isStable():
-            argv.append('--dev')
-        generatedFile = exec(argv)
-        commit(generatedFile, 'Update requirements')
+    invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@github.com'])
+    invokeGIT(['config', '--local', 'user.name', 'PDS dev admin'])
+    invokeGIT(['pull', 'origin', 'master'])
+    invokeGIT(['add', filename])
+    invokeGIT(['commit', '--allow-empty', '--message', message])

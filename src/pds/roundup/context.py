@@ -7,11 +7,16 @@ import os
 
 class Context(object):
     '''A context captures the landscape of the software environment, namely the
-    directory in which any roundips will occur, plus (literal) environment variables.
+    directory in which any roundips will occur, plus (literal) environment variables,
+    and a generic object store (a Python dict) that steps may use to save values
+    for use in other steps called ``objects``.
+
+    N.B.: So far, ``objects`` was predicted to be a replacement for ``::set-env``
+    in a GitHub workflow but I currently have zero use for it.
     '''
     def __init__(self, cwd, environ):
         '''Don't call this directly; instead use the ``create`` method'''
-        self.cwd, self.environ = cwd, environ
+        self.cwd, self.environ, self.objects = cwd, environ, {}
 
     def __repr__(self):
         return f'<{self.__class__.__name__}(cwd={self.cwd},environ=({len(self.environ)} items))>'

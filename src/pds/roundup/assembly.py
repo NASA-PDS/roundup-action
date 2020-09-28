@@ -38,8 +38,12 @@ class Assembly(object):
     def isStable(self):
         '''By default, assemblies will always be for "unstable" or in-development releases, so this
         always returns False. Subclasses might override this.
-    '   '''
+        '''
         return False
+
+    # 🤔 Other characteristics of the assembly can go here. For example, we might replace
+    # ``isStable`` (which isn't very "OO") with methods that return attributes of the assembly
+    # like "what PyPI do I use" and "how do we mark a snapshot", etc.
 
 
 class NoOpAssembly(Assembly):

@@ -70,9 +70,9 @@ jobs:
                 name: 🐄 Rounding it up
                 uses: NASA-PDS/roundup-action@master
                 with:
-                    - mode: 'stable'
+                    assembly: 'stable'
                 env:
-                    - ADMIN_GITHUB_TOKEN: ${{secrets.pat}}
+                    ADMIN_GITHUB_TOKEN: ${{secrets.pat}}
 ```
 
 

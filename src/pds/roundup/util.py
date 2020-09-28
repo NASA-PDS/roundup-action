@@ -2,6 +2,7 @@
 
 '''🤠 PDS Roundup — Utilities'''
 
+from .errors import InvokedProcessError
 import subprocess, logging
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ def invoke(argv):
     except subprocess.CalledProcessError as ex:
         _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)
         _logger.critical('📚 Stderr = «%s»', ex.stderr)
-        raise ex
+        raise InvokedProcessError(ex)
 
 
 def invokeGIT(gitArgs):

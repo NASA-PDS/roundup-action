@@ -6,6 +6,7 @@ from . import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
 from .util import invoke, invokeGIT
+from .errors import InvokedProcessError
 import logging, os
 
 _logger = logging.getLogger(__name__)
@@ -95,8 +96,11 @@ class _GitHubReleaseStep(_PythonStep):
         tags = invokeGIT(['tag', '--list', '*dev*'])
         for tag in tags:
             tag = tag.strip()
-            invokeGIT(['tag', '--delete', tag])
-            invokeGIT(['push', '--delete', 'origin', tag])
+            try:
+                invokeGIT(['tag', '--delete', tag])
+                invokeGIT(['push', '--delete', 'origin', tag])
+            except InvokedProcessError:
+                pass
         invoke(['python-snapshot-release', '--token', token])
 
 

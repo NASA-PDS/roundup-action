@@ -13,7 +13,7 @@ branding:
   icon: 'circle'
   color: 'orange'
 inputs:
-  mode:
+  assembly:
     description: >
       🤠 What kind of roundup are we doing, such as `stable` or `unstable` or
       something else? We default to `unstable`.
@@ -24,7 +24,7 @@ runs:
   image: 'Dockerfile'
   args:
     - '--mode'
-    - ${{inputs.mode}}
+    - ${{inputs.assembly}}
     - '--debug'
 
 ...

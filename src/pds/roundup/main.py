@@ -20,8 +20,8 @@ def _parseArgs():
         help='🗺 Context directory where the roundup should happen, default %(default)s'
     )
     parser.add_argument(
-        '-m', '--mode', default='unstable',
-        help='🤪 Unstable, stable, or other mode; default %(default)s'
+        '-a', '--assembly', default='unstable',
+        help='🤪 Unstable, stable, or other mode of assembly; default %(default)s'
     )
 
     # Handle logging
@@ -42,12 +42,15 @@ def main():
     args = _parseArgs()
     logging.basicConfig(level=args.loglevel)
     context = Context.create(os.getcwd(), populateEnvVars(os.environ))
-    if args.mode == 'stable':
+
+    # This isn't tremendously "OO" but until we need to support other kinds of assemblies, it's fine:
+    if args.assembly == 'stable':
         from .assembly import StablePDSAssembly
         assembly = StablePDSAssembly(context)
     else:
         from .assembly import UnstablePDSAssembly
         assembly = UnstablePDSAssembly(context)
+
     assembly.roundup()
     sys.exit(0)
 

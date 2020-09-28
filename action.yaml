@@ -23,7 +23,7 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - '--mode'
+    - '--assembly'
     - ${{inputs.assembly}}
     - '--debug'
 

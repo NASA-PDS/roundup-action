@@ -9,8 +9,7 @@ To use this action in your own workflow, just provide it `with` the following pa
 
 -   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to unstable or "development" releases.
 
-
-Depending on the roundup mode, you may also need the following environment variables:
+Depending on the roundup, you may also need the following environment variables:
 
 -   `ADMIN_GITHUB_TOKEN` — an access token that has administrative permissions in the repository; see below
 -   `pypi_username` — Optional username to use when registering a package

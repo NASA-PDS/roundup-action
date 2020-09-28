@@ -16,9 +16,14 @@ def invoke(argv):
     being arguments to the command.
     '''
     _logger.debug('🏃‍♀️ Running «%r»', argv)
-    cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
-    _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout)
-    return cp.stdout.decode('utf-8')
+    try:
+        cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
+        _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout)
+        return cp.stdout.decode('utf-8')
+    except subprocess.CalledProcessError as ex:
+        _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)
+        _logger.critical('📚 Stderr = «%s»', ex.stderr)
+        raise ex
 
 
 def invokeGIT(gitArgs):

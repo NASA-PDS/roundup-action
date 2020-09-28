@@ -1,7 +1,7 @@
 # 🤠 PDS Engineering: Roundup
 # ============================
 
-FROM nutjob4life/pds-github-actions-base:latest
+FROM nasapds/pds-github-actions-base:latest
 
 
 # Metadata
@@ -23,5 +23,5 @@ LABEL "maintainer"="Sean Kelly <kelly@seankelly.biz>"
 WORKDIR    /usr/src/roundup
 COPY       README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
 COPY       src/ ./src
-RUN        python3 setup.py install
+RUN        python3 setup.py --quiet install --optimize=2
 ENTRYPOINT ["/usr/local/bin/roundup"]

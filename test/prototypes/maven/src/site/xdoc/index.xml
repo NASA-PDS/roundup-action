@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<document>
+    <properties>
+        <title>Roundup Prototype Maven Project</title>
+    </properties>
+    <body>
+        <section name='About the Prototype Maven Project'>
+            <p>This is a prototypical Maven project used for testing the PDS Roundup Action 🤠.</p>
+        </section>
+    </body>
+</document>

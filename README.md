@@ -109,3 +109,24 @@ Or run it locally:
 
     env ADMIN_GITHUB_TOKEN=abcd0123 GITHUB_REPOSITORY=owner/repo GITHUB_WORKSPACE=/tmp PATH=${PWD}/bin:${PATH} ${PWD}/bin/roundup --debug --assembly unstable
 
+
+### 🤷‍♀️ Buildout
+
+For reasons I can't fathom, the Python environment used to bootstrap the [buildout](http://buildout.org/) must have [github3.py](https://pypi.org/project/github3.py/) installed into it, despite `github3.py` listed as a dependency in this package. So, as of 2020-10-05, here are the gymnastics:
+
+```console
+python3 -m venv /tmp/huh
+/tmp/huh/bin/pip install github3.py
+/tmp/huh/bin/python3 bootstrap.py --setuptools-version=50.3.0
+bin/buildout
+```
+
+You can then:
+
+- Run `bin/python` to get a Python with dependencies "baked in" for testing or exploration
+- Run `bin/roundup` to try a local roundup (but be prepared to pass in an insane amount of environment variables; see above)
+- Run `bin/test` to execute unit, functional, and integration tests with XML test reports suitable for Jenkins or other CI/CD tools
+- Expore `parts/omelette` for a greppable source tree of the Roundup code and all its dependencies
+
+
+

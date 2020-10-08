@@ -29,7 +29,15 @@ class MavenContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
         }
+        self.createSettingsXML(environ)
         super(MavenContext, self).__init__(cwd, environ)
+
+    def createSettingsXML(self, environ):
+        '''Create a Maven-compatible ``settings.xml`` file for future use by
+        ``Step``s created by this context.
+        '''
+        # 🤔 Should this be $HOME?
+        _logger.critical('🏚 HOME is %s', environ.get('HOME', 'unset!!'))
 
 
 class _MavenStep(Step):

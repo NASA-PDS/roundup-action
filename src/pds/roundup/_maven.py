@@ -3,7 +3,7 @@
 '''🤠 PDS Roundup: Maven context'''
 
 from . import Context
-from .errors import InvokedProcessError
+from .errors import InvokedProcessError, MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
 from .util import invoke, invokeGIT
 from lxml import etree
@@ -12,6 +12,9 @@ import logging, os
 _logger = logging.getLogger(__name__)
 
 _mavenNamespace = 'http://maven.apache.org/POM/4.0.0'
+_mavenSettingsNamespace = 'http://maven.apache.org/SETTINGS/1.0.0'
+_xsiNamespace = 'http://www.w3.org/2001/XMLSchema-instance'
+_mavenXSDLocation = 'https://maven.apache.org/xsd/settings-1.0.0.xsd'
 
 
 class MavenContext(Context):
@@ -29,15 +32,7 @@ class MavenContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
         }
-        self.createSettingsXML(environ)
         super(MavenContext, self).__init__(cwd, environ)
-
-    def createSettingsXML(self, environ):
-        '''Create a Maven-compatible ``settings.xml`` file for future use by
-        ``Step``s created by this context.
-        '''
-        # 🤔 Should this be $HOME?
-        _logger.critical('🏚 HOME is %s', environ.get('HOME', 'unset!!'))
 
 
 class _MavenStep(Step):
@@ -61,11 +56,52 @@ class _MavenStep(Step):
             )
         return versions[0].text.strip()
 
+    def _createSettingsXML(self):
+        '''Create a Maven-compatible ``settings.xml`` file for future use by
+        ``Step``s created by this context.
+        '''
+        container = '/root/.m2'
+        os.makedirs(container, exist_ok=True)
+        settings = os.path.join(container, 'settings.xml')
+        if os.path.isfile(settings): return
+
+        env = self.assembly.context.environ
+        username, password = env.get('ossrh_username'), env.get('ossrh_password')
+        if not username: raise MissingEnvVarError('ossrh_username')
+        if not password: raise MissingEnvVarError('ossrh_password')
+
+        nsmap = {
+            None: _mavenSettingsNamespace,
+            'xsi': _xsiNamespace
+        }
+        prefix = f'{{{_mavenSettingsNamespace}}}'
+        root = etree.Element(
+            prefix + 'settings',
+            attrib={f'{{{_xsiNamespace}}}schemaLocation': f'{_mavenSettingsNamespace} {_mavenXSDLocation}'},
+            nsmap=nsmap
+        )
+        servers = etree.Element(prefix + 'servers')
+        root.append(servers)
+        server = etree.Element(prefix + 'server')
+        servers.append(server)
+        etree.SubElement(server, prefix + 'id').text = 'ossrh'
+        etree.SubElement(server, prefix + 'username').text = username
+        etree.SubElement(server, prefix + 'password').text = password
+        tree = etree.ElementTree(root)
+        with open(settings, 'wb') as out:
+            tree.write(out, encoding='utf-8', xml_declaration=True, pretty_print=True)
+
+    def invokeMaven(self, args):
+        '''Invoke Maven, creating a ``settings.xml`` file each time as necessary'''
+        self._createSettingsXML()
+        argv = ['mvn'] + args
+        return invoke(argv)
+
 
 class _UnitTestStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven unit test step')
-        invoke(['mvn', 'test'])
+        self.invokeMaven(['test'])
 
 
 class _IntegrationTestStep(_MavenStep):
@@ -76,13 +112,13 @@ class _IntegrationTestStep(_MavenStep):
 class _DocsStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven docs step')
-        invoke(['mvn', 'site'])
+        self.invokeMaven(['site'])
 
 
 class _BuildStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven build step')
-        invoke(['mvn', 'compile'])
+        self.invokeMaven(['compile'])
 
 
 class _GitHubReleaseStep(_MavenStep):
@@ -113,15 +149,15 @@ class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven artifact publication step; TBD')
         if self.assembly.isStable():
-            invoke(['mvn', '-DremoveSnapshot=true', 'versions:set'])
+            self.invokeMaven(['-DremoveSnapshot=true', 'versions:set'])
             invokeGIT(['add', 'pom.xml'])
             version = self.getVersionFromPOM()
-            invoke(['mvn', '--activate-profiles', 'release', 'clean', 'site', 'deploy'])
+            self.invokeMaven(['--activate-profiles', 'release', 'clean', 'site', 'deploy'])
             invokeGIT(['git', 'tag', 'v' + version])
             invokeGIT(['git', 'push', '--tags'])
         else:
             version = self.getVersionFromPOM()
-            invoke(['mvn', 'clean', 'site', 'deploy'])
+            self.invokeMaven(['clean', 'site', 'deploy'])
 
 
 class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics

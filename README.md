@@ -101,6 +101,8 @@ But you could also invoke it the way GitHub Actions does:
         --env ADMIN_GITHUB_TOKEN=$(cat my-dev-token.txt) \
         --env pypi_username=joe_cowboy4life \
         --env pypi_password=s3cr3t \
+        --env ossrh_username=java_cowboy4life \
+        --env ossrh_password=m0rec0ff33 \
         --env GITHUB_REPOSITORY=joecowboy/test-repo \
         --volume /Users/joe/Documents/Development/test-repo:"/github/workspace" \
         pds-roundup --debug --assembly unstable

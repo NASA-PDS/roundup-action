@@ -31,6 +31,9 @@ class MavenContext(Context):
         }
         super(MavenContext, self).__init__(cwd, environ)
 
+
+class _MavenStep(Step):
+    '''☕️ Maven steps provide common conveniences for Maven and the Java environment'''
     def getVersionFromPOM(self):
         '''Get the version string from a ``pom.xml`` file'''
         cwd = self.assembly.context.cwd
@@ -51,35 +54,30 @@ class MavenContext(Context):
         return versions[0].text.strip()
 
 
-class _MavenStep(Step):
-    '''☕️ Maven steps provide common conveniences for Maven and the Java environment'''
-    pass
-
-
 class _UnitTestStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven unit test step')
         invoke(['mvn', 'test'])
 
 
-class _IntegrationTestStep(Step):
+class _IntegrationTestStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven integration test step; TBD')
 
 
-class _DocsStep(Step):
+class _DocsStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven docs step')
         invoke(['mvn', 'site'])
 
 
-class _BuildStep(Step):
+class _BuildStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven build step')
         invoke(['mvn', 'compile'])
 
 
-class _GitHubReleaseStep(Step):
+class _GitHubReleaseStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven GitHub release step')
 
@@ -103,7 +101,7 @@ class _GitHubReleaseStep(Step):
         invoke(['maven-snapshot-release', '--token', token])
 
 
-class _ArtifactPublicationStep(Step):
+class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven artifact publication step; TBD')
         if self.assembly.isStable():
@@ -118,6 +116,6 @@ class _ArtifactPublicationStep(Step):
             invoke(['mvn', 'clean', 'site', 'deploy'])
 
 
-class _DocPublicationStep(DocPublicationStep):
+class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics
     def getDocDir(self):
         return 'target/site'

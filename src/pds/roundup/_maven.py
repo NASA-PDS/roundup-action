@@ -7,7 +7,7 @@ from .errors import InvokedProcessError, MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
 from .util import invoke, invokeGIT
 from lxml import etree
-import logging, os
+import logging, os, base64, subprocess
 
 _logger = logging.getLogger(__name__)
 
@@ -65,10 +65,14 @@ class _MavenStep(Step):
         settings = os.path.join(container, 'settings.xml')
         if os.path.isfile(settings): return
 
-        env = self.assembly.context.environ
-        username, password = env.get('ossrh_username'), env.get('ossrh_password')
-        if not username: raise MissingEnvVarError('ossrh_username')
-        if not password: raise MissingEnvVarError('ossrh_password')
+        _logger.info('✍️ Writing Maven settings to %s', settings)
+
+        env, creds = self.assembly.context.environ, {}
+        for var in ('username', 'password'):
+            varName = 'ossrh_' + var
+            value = env.get(varName)
+            if not value: raise MissingEnvVarError(varName)
+            creds[var] = value
 
         nsmap = {
             None: _mavenSettingsNamespace,
@@ -85,15 +89,38 @@ class _MavenStep(Step):
         server = etree.Element(prefix + 'server')
         servers.append(server)
         etree.SubElement(server, prefix + 'id').text = 'ossrh'
-        etree.SubElement(server, prefix + 'username').text = username
-        etree.SubElement(server, prefix + 'password').text = password
+        etree.SubElement(server, prefix + 'username').text = creds['username']
+        etree.SubElement(server, prefix + 'password').text = creds['password']
+        profiles = etree.Element(prefix + 'profiles')
+        root.append(profiles)
+        profile = etree.Element(prefix + 'profile')
+        profiles.append(profile)
+        etree.SubElement(profile, prefix + 'id').text = 'ossrh'
+        activation = etree.Element(prefix + 'activation')
+        etree.SubElement(activation, prefix + 'activeByDefault').text = 'true'
+        properties = etree.Element(prefix + 'properties')
+        etree.SubElement(properties, prefix + 'gpg.executable').text = '/usr/bin/gpg'
+        etree.SubElement(properties, prefix + 'gpg.useagent').text = 'false'
+
         tree = etree.ElementTree(root)
         with open(settings, 'wb') as out:
             tree.write(out, encoding='utf-8', xml_declaration=True, pretty_print=True)
 
+    def _createKeyring(self):
+        '''Make a GPG keyring we can later use for signing artifacts'''
+        container, keyVarName = '/root/.gnupg', 'CODE_SIGNING_KEY'
+
+        # Assumption: the .gnupg directory's existence means we've already imported the code signing key
+        if os.path.isdir(container): return
+
+        key = self.assembly.context.environ.get(keyVarName)
+        if not key: raise MissingEnvVarError(keyVarName)
+        subprocess.run(['gpg', '--batch', '--yes', '--import'], input=base64.b64decode(key), check=True)
+
     def invokeMaven(self, args):
         '''Invoke Maven, creating a ``settings.xml`` file each time as necessary'''
         self._createSettingsXML()
+        self._createKeyring()
         argv = ['mvn'] + args
         return invoke(argv)
 
@@ -147,12 +174,11 @@ class _GitHubReleaseStep(_MavenStep):
 
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
-        _logger.debug('Maven artifact publication step; TBD')
         if self.assembly.isStable():
             self.invokeMaven(['-DremoveSnapshot=true', 'versions:set'])
             invokeGIT(['add', 'pom.xml'])
             version = self.getVersionFromPOM()
-            self.invokeMaven(['--activate-profiles', 'release', 'clean', 'site', 'deploy'])
+            self.invokeMaven(['--activate-profiles', 'release', 'clean', 'package', 'site', 'deploy'])
             invokeGIT(['git', 'tag', 'v' + version])
             invokeGIT(['git', 'push', '--tags'])
         else:

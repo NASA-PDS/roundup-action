@@ -81,6 +81,11 @@ class _GitHubReleaseStep(_PythonStep):
     '''A step that releases software to GitHub
     '''
     def execute(self):
+        _logger.debug('Python GitHub release step')
+        if self.assembly.isStable():
+            _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
+            return
+
         token = self.getToken()
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')

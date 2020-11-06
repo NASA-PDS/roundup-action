@@ -102,7 +102,7 @@ jobs:
                     ADMIN_GITHUB_TOKEN: ${{secrets.pat}}
                     CODE_SIGNING_KEY:   ${{secrets.CODE_SIGNING_KEY}}
                     ossrh_username:     jocowboy
-                    ossrh_password:     ${{secrets.OSSRH_USERNAME}}
+                    ossrh_password:     ${{secrets.OSSRH_PASSWORD}}
                     pypi_username:      snakewrangler
                     pypi_password:      ${{secrets.PYPI_PASSWORD}}
 ```

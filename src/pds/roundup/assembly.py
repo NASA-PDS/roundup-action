@@ -61,8 +61,8 @@ class PDSAssembly(Assembly):
         StepName.requirements,
         StepName.docs,
         StepName.build,
-        StepName.githubRelease,
         StepName.artifactPublication,
+        StepName.githubRelease,
         StepName.docPublication,
     ]
 

@@ -185,7 +185,6 @@ class _ArtifactPublicationStep(_MavenStep):
             invokeGIT(['git', 'tag', 'v' + version])
             invokeGIT(['git', 'push', '--tags'])
         else:
-            version = self.getVersionFromPOM()
             self.invokeMaven(['clean', 'site', 'deploy'])
 
 

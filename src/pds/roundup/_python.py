@@ -93,11 +93,10 @@ class _GitHubReleaseStep(_PythonStep):
 
         # 😮 TODO: Use Python GitHub API
 
-        # ❓ Thomas uses ``--unshallow``, but when I try that I get an error:
-        #    fatal: --unshallow on a complete repository does not make sense
-        # invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
-        # So I just won't use it:
-        invokeGIT(['fetch', '--prune', '--tags'])
+        try:
+            invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
+        except Exception:
+            invokeGIT(['fetch', '--prune', '--tags'])
         tags = invokeGIT(['tag', '--list', '*dev*'])
         for tag in tags:
             tag = tag.strip()

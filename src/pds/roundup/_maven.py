@@ -161,10 +161,12 @@ class _GitHubReleaseStep(_MavenStep):
             return
 
         # 😮 TODO: Use Python GitHub API!
-        # 🤷‍♀️ Thomas uses ``--unshallow``, but when I try that I get an error.
-        # So we skip it for now:
-        invokeGIT(['fetch', '--prune', '--tags'])
-        tags = invokeGIT(['tag', '--list', '*dev*'])
+
+        try:
+            invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
+        except Exception:
+            invokeGIT(['fetch', '--prune', '--tags'])
+        tags = invokeGIT(['tag', '--list', '*SNAPSHOT*'])
         for tag in tags:
             tag = tag.strip()
             try:

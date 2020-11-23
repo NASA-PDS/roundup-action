@@ -41,7 +41,8 @@ def invoke(argv):
         return cp.stdout.decode('utf-8')
     except subprocess.CalledProcessError as ex:
         _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)
-        _logger.critical('📚 Stderr = «%s»', ex.stderr)
+        _logger.critical('🪵 Stdout = «%s»', ex.stdout.decode('utf-8'))
+        _logger.critical('📚 Stderr = «%s»', ex.stderr.decode('utf-8'))
         raise InvokedProcessError(ex)
 
 

@@ -5,9 +5,10 @@ This is an [action for GitHub](https://github.com/features/actions) that does a 
 
 ## ℹ️ Using this Action
 
-To use this action in your own workflow, just provide it `with` the following parameter(s):
+To use this action in your own workflow, just provide it `with` any of the following parameters:
 
 -   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to `unstable` or "development" releases.
+-   `packages` — A comma-separated list of extra packages needed to complete your assembly.
 
 Depending on the roundup, you may also need the following environment variables:
 
@@ -21,9 +22,28 @@ Depending on the roundup, you may also need the following environment variables:
 (Note that `GITHUB_TOKEN` is also used by the Roundup, but it's automatically provided by the GitHub Actions system.)
 
 
+### 🍃 Environment
+
+The Roundup Action uses the [NASA-PDS](https://github.com/NASA-PDS) [Github Actions Base](https://github.com/NASA-PDS/github-actions-base) as its starting environment. As of the time of this writing, this is [Alpine Linux 3.12](https://www.alpinelinux.org), [Python 3.8.5](https://www.python.org/), and [Apache Maven 3.6.3](https://maven.apache.org/), which in turns gives you [OpenJDK 1.8.0_252](https://openjdk.java.net/) (with `JAVA_HOME` defaulting to `/usr/lib/jvm/default-jvm`).
+
+If you need a newer or older Java, or any other packages present in order to complete the unit tests, build, documentation, etc., steps of your roundup, you can use the `packages` variable to specify additional [Alpine Linux Packages](https://pkgs.alpinelinux.org/packages) that will be installed prior to starting. For example:
+
+    with:
+        packages: openjdk11-jdk,pdfgrep
+
+This causes the Roundup to use OpenJDK 11 and also installs the `pdfgrep` package.
+
+
+#### ☕️ Java Note
+
+If you install an JK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environemnt variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
+
+
 ### 👮‍♂️ GitHub Admin Token
 
-The Roundup action must have access to various target repositories. This is afforded by a token, `ADMIN_GITHUB_TOKEN` in the environment. To set up such a token:
+The Roundup action must have access to various target repositories. This is afforded by a token, `ADMIN_GITHUB_TOKEN` in the environment. Note that the [NASA-PDS]() organization already has an `ADMIN_GITHUB_TOKEN` set and so any repository within the organization inherits it.
+
+But if you need to override or set up a new token, do the following:
 
 1.  Vist your GitHub account's Settings.
 2.  Go to "Developer Settings".
@@ -54,7 +74,7 @@ Signing code artifacts helps ensure that the code is not just created by who we 
 
 **📒 Note:** Whether automatically signing artifacts is a safe practice is left for future discussion.
 
-To set up a code signing key for the Roundup action, first create an OpenPGP-compatible key pair using ``gpg`` or compatible tool; for example, with [GnuPG 2.2](https://www.gnupg.org/), run ``gpg --full-generate-key``:
+To set up a code signing key for the Roundup action, first create an OpenPGP-compatible key pair using ``gpg`` or similar tool; for example, with [GnuPG 2.2](https://www.gnupg.org/), run ``gpg --full-generate-key``:
 
 -   For the kind of key, choose "RSA (sign only)".
 -   For the key length, 1024 bits is fine; 4096 is great.
@@ -97,7 +117,8 @@ jobs:
                 name: 🐄 Rounding it up
                 uses: NASA-PDS/roundup-action@master
                 with:
-                    assembly: 'stable'
+                    assembly: stable
+                    packages: cowpoke,chili-sort,lasso
                 env:
                     ADMIN_GITHUB_TOKEN: ${{secrets.pat}}
                     CODE_SIGNING_KEY:   ${{secrets.CODE_SIGNING_KEY}}

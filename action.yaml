@@ -19,12 +19,20 @@ inputs:
       something else? We default to `unstable`.
     required: false
     default: 'unstable'
+  packages:
+    description: >
+      📦 What packages should be installed prior to starting the roundup? Use
+      commas to separate each. These are Alpine Linux package names.
+    required: false
+    default: ''
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
     - '--assembly'
     - ${{inputs.assembly}}
+    - '--packages'
+    - ${{input.packages}}
     - '--debug'
 
 ...

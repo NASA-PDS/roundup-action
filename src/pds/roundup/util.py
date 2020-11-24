@@ -16,13 +16,19 @@ def populateEnvVars(env):
     required by a roundup. Return a copy of this modified mapping. Note that we may also log
     some warning messages if certain expected variables are missing.
     '''
-    copy = dict(env)
-    pypi_username = copy.get('pypi_username', 'pypi')
-    pypi_password = copy.get('pypi_password', 'secret')
-    copy['pypi_username'] = pypi_username
-    copy['pypi_password'] = pypi_password
+    copy                   = dict(env)
+    pypi_username          = copy.get('pypi_username', 'pypi')
+    pypi_password          = copy.get('pypi_password', 'secret')
+    ossrh_username         = copy.get('ossrh_username', 'ossrh')
+    ossrh_password         = copy.get('ossrh_password', 'secret')
+    java_home              = copy.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
+    copy['pypi_username']  = pypi_username
+    copy['pypi_password']  = pypi_password
+    copy['ossrh_username'] = ossrh_username
+    copy['ossrh_password'] = ossrh_password
+    copy['JAVA_HOME']      = java_home
 
-    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):
+    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):  # 🤔 TODO: is GITHUB_TOKEN really used?
         if var not in env:
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 
@@ -37,11 +43,12 @@ def invoke(argv):
     _logger.debug('🏃‍♀️ Running «%r»', argv)
     try:
         cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
-        _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout)
+        _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout.decode('utf-8'))
         return cp.stdout.decode('utf-8')
     except subprocess.CalledProcessError as ex:
         _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)
-        _logger.critical('📚 Stderr = «%s»', ex.stderr)
+        _logger.critical('🪵 Stdout = «%s»', ex.stdout.decode('utf-8'))
+        _logger.critical('📚 Stderr = «%s»', ex.stderr.decode('utf-8'))
         raise InvokedProcessError(ex)
 
 

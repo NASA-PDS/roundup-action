@@ -5,8 +5,11 @@
 
 
 from .context import Context
-from .util import populateEnvVars
+from .errors import InvokedProcessError
+from .util import populateEnvVars, invoke
 import os, logging, argparse, sys
+
+_logger = logging.getLogger(__name__)
 
 
 def _parseArgs():
@@ -22,6 +25,10 @@ def _parseArgs():
     parser.add_argument(
         '-a', '--assembly', default='unstable',
         help='🤪 Unstable, stable, or other mode of assembly; default %(default)s'
+    )
+    parser.add_argument(
+        '-p', '--packages',
+        help='📦 Additional pacakges (separated with a comma) to install prior to assembly'
     )
 
     # Handle logging
@@ -43,13 +50,36 @@ def main():
     logging.basicConfig(level=args.loglevel)
     context = Context.create(os.getcwd(), populateEnvVars(os.environ))
 
+    # Bonus package time
+    if args.packages:
+        invoke(['apk', 'update'])
+        for package in args.packages.split(','):
+            try:
+                _logger.debug('🎁 Adding package %s', package)
+                invoke(['apk', 'add', '--no-progress', package])
+            except InvokedProcessError:
+                _logger.critical('💥 Cannot add package %s, aborting', package)
+                sys.exit(1)
+
+    # This belongs somewhere else; essentially the ``Context`` already captures the
+    # environment, but we made invoking programs a utility function devoid of context.
+    # Instead, ``invoke`` should be a method of ``Context``. But since it's close to
+    # quitting time and I'm trying to solve a specific issue (#14), I'm doing this
+    # ugly setting here:
+    os.environ['JAVA_HOME'] = os.environ.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
+
     # This isn't tremendously "OO" but until we need to support other kinds of assemblies, it's fine:
     if args.assembly == 'stable':
         from .assembly import StablePDSAssembly
         assembly = StablePDSAssembly(context)
-    else:
+    elif args.assembly == 'unstable':
         from .assembly import UnstablePDSAssembly
         assembly = UnstablePDSAssembly(context)
+    elif args.assembly == 'noop':
+        from .assembly import NoOpAssembly
+        assembly = NoOpAssembly(context)
+    else:
+        raise NotImplementedError(f"Don't know how to roundup an assembly called «{args.assembly}»")
 
     assembly.roundup()
     sys.exit(0)

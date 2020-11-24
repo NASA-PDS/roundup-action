@@ -59,6 +59,10 @@ class NullStep(Step):
     '''This is a "null" or "no-op" step that does nothing.'''
     def execute(self):
         pass
+        # But for development, this sure is handy:
+        # import pdb;pdb.set_trace()
+        # import subprocess
+        # subprocess.run('/bin/sh')
 
 
 class ChangeLogStep(Step):

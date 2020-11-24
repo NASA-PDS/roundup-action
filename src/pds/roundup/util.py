@@ -16,13 +16,19 @@ def populateEnvVars(env):
     required by a roundup. Return a copy of this modified mapping. Note that we may also log
     some warning messages if certain expected variables are missing.
     '''
-    copy = dict(env)
-    pypi_username = copy.get('pypi_username', 'pypi')
-    pypi_password = copy.get('pypi_password', 'secret')
-    copy['pypi_username'] = pypi_username
-    copy['pypi_password'] = pypi_password
+    copy                   = dict(env)
+    pypi_username          = copy.get('pypi_username', 'pypi')
+    pypi_password          = copy.get('pypi_password', 'secret')
+    ossrh_username         = copy.get('ossrh_username', 'ossrh')
+    ossrh_password         = copy.get('ossrh_password', 'secret')
+    java_home              = copy.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
+    copy['pypi_username']  = pypi_username
+    copy['pypi_password']  = pypi_password
+    copy['ossrh_username'] = ossrh_username
+    copy['ossrh_password'] = ossrh_password
+    copy['JAVA_HOME']      = java_home
 
-    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):
+    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):  # 🤔 TODO: is GITHUB_TOKEN really used?
         if var not in env:
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 

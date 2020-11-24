@@ -43,7 +43,7 @@ def invoke(argv):
     _logger.debug('🏃‍♀️ Running «%r»', argv)
     try:
         cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
-        _logger.debug('🏁 Run complete, rc=%d, output=%s', cp.returncode, cp.stdout.decode('utf-8'))
+        _logger.debug('🏁 Run complete, rc=%d, output=«%s»', cp.returncode, cp.stdout.decode('utf-8'))
         return cp.stdout.decode('utf-8')
     except subprocess.CalledProcessError as ex:
         _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)

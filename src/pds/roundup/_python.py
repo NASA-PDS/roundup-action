@@ -95,16 +95,24 @@ class _GitHubReleaseStep(_PythonStep):
 
         try:
             invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
-        except Exception:
+        except InvokedProcessError:
+            _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
             invokeGIT(['fetch', '--prune', '--tags'])
-        tags = invokeGIT(['tag', '--list', '*dev*'])
+        tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
         for tag in tags:
             tag = tag.strip()
+            if not tag: continue
             try:
+                _logger.debug('␡ Attempting to delete tag %s', tag)
                 invokeGIT(['tag', '--delete', tag])
                 invokeGIT(['push', '--delete', 'origin', tag])
-            except InvokedProcessError:
-                pass
+            except InvokedProcessError as ex:
+                _logger.info(
+                    '🧐 Cannot delete tag %s, stdout=«%s», stderr=«%s»; but pressing on',
+                    tag,
+                    ex.error.stdout.decode('utf-8'),
+                    ex.error.stderr.decode('utf-8'),
+                )
         invoke(['python-snapshot-release', '--token', token])
 
 

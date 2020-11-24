@@ -32,7 +32,7 @@ runs:
     - '--assembly'
     - ${{inputs.assembly}}
     - '--packages'
-    - ${{input.packages}}
+    - ${{inputs.packages}}
     - '--debug'
 
 ...

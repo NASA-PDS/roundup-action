@@ -192,8 +192,10 @@ class _ArtifactPublicationStep(_MavenStep):
             invokeGIT(['add', 'pom.xml'])
             version = self.getVersionFromPOM()
             self.invokeMaven(['--activate-profiles', 'release', 'clean', 'package', 'site', 'deploy'])
-            invokeGIT(['git', 'tag', 'v' + version])
-            invokeGIT(['git', 'push', '--tags'])
+            # it does not look like we need that
+            # + invokeGIT does not need to repeat 'git' argument
+            #invokeGIT(['git', 'tag', 'v' + version])
+            #invokeGIT(['git', 'push', '--tags'])
         else:
             self.invokeMaven(['clean', 'site', 'deploy'])
 

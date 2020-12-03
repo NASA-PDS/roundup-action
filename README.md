@@ -135,7 +135,7 @@ Make a local image for testing:
 
     docker image build --tag pds-roundup:latest .
 
-You can then poke aorund in it:
+You can then poke around in it:
 
     docker container run --interactive --tty --rm --name roundup --volume ${PWD}:/mnt --entrypoint /bin/sh pds-roundup:latest
 
@@ -171,6 +171,7 @@ For reasons I can't fathom, the Python environment used to bootstrap the [buildo
 
 ```console
 python3 -m venv /tmp/huh
+source /tmp/huh/bin/activate
 /tmp/huh/bin/pip install github3.py
 /tmp/huh/bin/python3 bootstrap.py --setuptools-version=50.3.0
 bin/buildout

@@ -139,7 +139,7 @@ class _IntegrationTestStep(_MavenStep):
 class _DocsStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven docs step')
-        self.invokeMaven(['site'])
+        self.invokeMaven(['compile', 'site'])
 
 
 class _BuildStep(_MavenStep):

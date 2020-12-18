@@ -137,9 +137,16 @@ class _IntegrationTestStep(_MavenStep):
 
 
 class _DocsStep(_MavenStep):
+    '''Docs generation.
+
+    To generate maven docs, usually you can just do `mvn site`
+    However, in order to support repos with sub-modules, you have 
+    to package the software in case there are sub-module dependencies,
+    build the site as normal, and aggregate the docs (site:stage)
+    '''
     def execute(self):
         _logger.debug('Maven docs step')
-        self.invokeMaven(['package', 'site'])
+        self.invokeMaven(['package', 'site', 'site:stage'])
 
 
 class _BuildStep(_MavenStep):
@@ -188,18 +195,11 @@ class _GitHubReleaseStep(_MavenStep):
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         if self.assembly.isStable():
-            self.invokeMaven(['-DremoveSnapshot=true', 'versions:set'])
-            invokeGIT(['add', 'pom.xml'])
-            version = self.getVersionFromPOM()
             self.invokeMaven(['--activate-profiles', 'release', 'clean', 'package', 'site', 'deploy'])
-            # it does not look like we need that
-            # + invokeGIT does not need to repeat 'git' argument
-            #invokeGIT(['git', 'tag', 'v' + version])
-            #invokeGIT(['git', 'push', '--tags'])
         else:
             self.invokeMaven(['clean', 'site', 'deploy'])
 
 
 class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics
     def getDocDir(self):
-        return 'target/site'
+        return 'target/staging'

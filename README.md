@@ -13,7 +13,7 @@ To use this action in your own workflow, just provide it `with` any of the follo
 For Maven-based roundups *only*, you can also specify these optional `with` parameters:
 
 -   `maven-test-phases` — A comma-separated list of Maven phases for testing, defaults to `test`
--   `maven-doc-phases` — A comma-separated list of Maven phases for documentation generation, defaults to `package,site`
+-   `maven-doc-phases` — A comma-separated list of Maven phases for documentation generation, defaults to `package,site,site:stage`
 -   `maven-build-phases` — A comma-separated list of Maven phases for building the software, defaults to `compile`
 -   `maven-stable-artifact-phases` — A comma-separated list of Maven phases for stable artifact publication, defaults to `clean,package,site,deploy`
 -   `maven-unstable-artifact-phases` — A comma-separated list of Maven phases for unstable artifact publication, defaults to `clean,site,deploy`

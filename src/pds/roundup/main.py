@@ -34,7 +34,7 @@ def _parseArgs():
     # Maven 😩
     group = parser.add_argument_group('Maven phases (or goals), comma-separated')
     group.add_argument('--maven-test-phases', help='🩺 Test (%(default)s)', default='test')
-    group.add_argument('--maven-doc-phases', help='📚 Documentation (%(default)s)', default='package,site')
+    group.add_argument('--maven-doc-phases', help='📚 Documentation (%(default)s)', default='package,site,site:stage')
     group.add_argument('--maven-build-phases', help='👷‍ Build (%(default)s)', default='compile')
     group.add_argument(
         '--maven-stable-artifact-phases',

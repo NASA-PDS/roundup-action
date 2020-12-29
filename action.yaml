@@ -32,7 +32,7 @@ inputs:
     maven-doc-phases:
         description: 📚 Maven phases (or goals) to invoke for generation documentation.
         required: false
-        default: 'package,site'
+        default: 'package,site,site:stage'
     maven-build-phases:
         description: 👷‍ Maven phases (or goals) to invoke for building software.
         required: false

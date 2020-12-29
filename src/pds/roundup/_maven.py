@@ -137,6 +137,13 @@ class _IntegrationTestStep(_MavenStep):
 
 
 class _DocsStep(_MavenStep):
+    '''Docs generation.
+
+    To generate maven docs, usually you can just do `mvn site`
+    However, in order to support repos with sub-modules, you have 
+    to package the software in case there are sub-module dependencies,
+    build the site as normal, and aggregate the docs (site:stage)
+    '''
     def execute(self):
         _logger.debug('Maven docs step')
         self.invokeMaven(self.assembly.context.args.maven_doc_phases.split(','))
@@ -188,8 +195,6 @@ class _GitHubReleaseStep(_MavenStep):
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         if self.assembly.isStable():
-            self.invokeMaven(['-DremoveSnapshot=true', 'versions:set'])
-            invokeGIT(['add', 'pom.xml'])
             args = ['--activate-profiles', 'release']
             args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
             self.invokeMaven(args)
@@ -199,4 +204,4 @@ class _ArtifactPublicationStep(_MavenStep):
 
 class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics
     def getDocDir(self):
-        return 'target/site'
+        return 'target/staging'

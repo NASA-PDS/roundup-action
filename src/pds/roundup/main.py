@@ -31,6 +31,21 @@ def _parseArgs():
         help='📦 Additional pacakges (separated with a comma) to install prior to assembly'
     )
 
+    # Maven 😩
+    group = parser.add_argument_group('Maven phases (or goals), comma-separated')
+    group.add_argument('--maven-test-phases', help='🩺 Test (%(default)s)', default='test')
+    group.add_argument('--maven-doc-phases', help='📚 Documentation (%(default)s)', default='package,site')
+    group.add_argument('--maven-build-phases', help='👷‍ Build (%(default)s)', default='compile')
+    group.add_argument(
+        '--maven-stable-artifact-phases',
+        help='😌 Stable artifacts (%(default)s)', default='clean,package,site,deploy'
+    )
+    group.add_argument(
+        '--maven-unstable-artifact-phases',
+        help='🤪 Unstable artifacts (%(default)s)',
+        default='clean,site,deploy'
+    )
+
     # Handle logging
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -48,7 +63,7 @@ def main():
     '''Main entrypoint'''
     args = _parseArgs()
     logging.basicConfig(level=args.loglevel)
-    context = Context.create(os.getcwd(), populateEnvVars(os.environ))
+    context = Context.create(os.getcwd(), populateEnvVars(os.environ), args)
 
     # Bonus package time
     if args.packages:

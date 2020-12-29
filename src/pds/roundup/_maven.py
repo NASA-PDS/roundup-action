@@ -19,7 +19,7 @@ _mavenXSDLocation = 'https://maven.apache.org/xsd/settings-1.0.0.xsd'
 
 class MavenContext(Context):
     '''A Maven context supports Maven (Java) software proejcts'''
-    def __init__(self, cwd, environ):
+    def __init__(self, cwd, environ, args):
         self.steps = {
             StepName.null:                NullStep,
             StepName.unitTest:            _UnitTestStep,
@@ -32,7 +32,7 @@ class MavenContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
         }
-        super(MavenContext, self).__init__(cwd, environ)
+        super(MavenContext, self).__init__(cwd, environ, args)
 
 
 class _MavenStep(Step):
@@ -128,7 +128,7 @@ class _MavenStep(Step):
 class _UnitTestStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven unit test step')
-        self.invokeMaven(['test'])
+        self.invokeMaven(self.assembly.context.args.maven_test_phases.split(','))
 
 
 class _IntegrationTestStep(_MavenStep):
@@ -139,13 +139,13 @@ class _IntegrationTestStep(_MavenStep):
 class _DocsStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven docs step')
-        self.invokeMaven(['package', 'site'])
+        self.invokeMaven(self.assembly.context.args.maven_doc_phases.split(','))
 
 
 class _BuildStep(_MavenStep):
     def execute(self):
         _logger.debug('Maven build step')
-        self.invokeMaven(['compile'])
+        self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
 
 
 class _GitHubReleaseStep(_MavenStep):
@@ -190,14 +190,11 @@ class _ArtifactPublicationStep(_MavenStep):
         if self.assembly.isStable():
             self.invokeMaven(['-DremoveSnapshot=true', 'versions:set'])
             invokeGIT(['add', 'pom.xml'])
-            version = self.getVersionFromPOM()
-            self.invokeMaven(['--activate-profiles', 'release', 'clean', 'package', 'site', 'deploy'])
-            # it does not look like we need that
-            # + invokeGIT does not need to repeat 'git' argument
-            #invokeGIT(['git', 'tag', 'v' + version])
-            #invokeGIT(['git', 'push', '--tags'])
+            args = ['--activate-profiles', 'release']
+            args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
+            self.invokeMaven(args)
         else:
-            self.invokeMaven(['clean', 'site', 'deploy'])
+            self.invokeMaven(self.assembly.context.args.maven_unstable_artifact_phases.split(','))
 
 
 class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics

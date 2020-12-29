@@ -25,6 +25,26 @@ inputs:
             commas to separate each. These are Alpine Linux package names.
         required: false
         default: ''
+    maven-test-phases:
+        description: 🩺 Maven phases (or goals) to invoke for running tests.
+        required: false
+        default: 'test'
+    maven-doc-phases:
+        description: 📚 Maven phases (or goals) to invoke for generation documentation.
+        required: false
+        default: 'package,site'
+    maven-build-phases:
+        description: 👷‍ Maven phases (or goals) to invoke for building software.
+        required: false
+        default: 'compile'
+    maven-stable-artifact-phases:
+        description: 😌 Maven phases (or goals) to invoke for publishing stable artifacts.
+        required: false
+        default: 'clean,package,site,deploy'
+    maven-unstable-artifact-phases:
+        description: 🤪 Maven phases (or goals) to invoke for publishing unstable artifacts.
+        required: false
+        default: 'clean,site,deploy'
 runs:
     using: 'docker'
     image: 'Dockerfile'
@@ -33,6 +53,16 @@ runs:
         - ${{inputs.assembly}}
         - '--packages'
         - ${{inputs.packages}}
+        - '--maven-test-phases'
+        - ${{inputs.maven-test-phasese}}
+        - '--maven-doc-phases'
+        - ${{inputs.maven-doc-phases}}
+        - '--maven-build-phases'
+        - ${{inputs.maven-build-phases}}
+        - '--maven-stable-artifact-phases'
+        - ${{inputs.maven-stable-artifact-phases}}
+        - '--maven-unstable-artifact-phases'
+        - ${{inputs.maven-unstable-artifact-phases}}
         - '--debug'
 
 ...

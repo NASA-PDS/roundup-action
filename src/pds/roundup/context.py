@@ -14,9 +14,9 @@ class Context(object):
     N.B.: So far, ``objects`` was predicted to be a replacement for ``::set-env``
     in a GitHub workflow but I currently have zero use for it.
     '''
-    def __init__(self, cwd, environ):
+    def __init__(self, cwd, environ, args):
         '''Don't call this directly; instead use the ``create`` method'''
-        self.cwd, self.environ, self.objects = cwd, environ, {}
+        self.cwd, self.environ, self.objects, self.args = cwd, environ, {}, args
 
     def __repr__(self):
         return f'<{self.__class__.__name__}(cwd={self.cwd},environ=({len(self.environ)} items))>'
@@ -29,13 +29,13 @@ class Context(object):
         return stepFactory(assembly) if stepFactory else None
 
     @staticmethod
-    def create(cwd, environ):
+    def create(cwd, environ, args):
         '''Create a new context for given current working directory, ``cwd``, and the given
-        ``environ``ment variables.
+        ``environ``ment variables, and the parsed command-line ``args``.
         '''
         from . import contextFactories
         factories, factory = contextFactories(), None
         for entry in os.listdir(cwd):
             factory = factories.get(entry)
             if factory: break
-        return factory(cwd, environ) if factory else None
+        return factory(cwd, environ, args) if factory else None

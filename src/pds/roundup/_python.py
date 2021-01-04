@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 class PythonContext(Context):
     '''A Python context supports Python software proejcts'''
-    def __init__(self, cwd, environ):
+    def __init__(self, cwd, environ, args):
         self.steps = {
             StepName.null:                NullStep,
             StepName.unitTest:            _UnitTestStep,
@@ -27,7 +27,7 @@ class PythonContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
         }
-        super(PythonContext, self).__init__(cwd, environ)
+        super(PythonContext, self).__init__(cwd, environ, args)
 
 
 class _PythonStep(Step):

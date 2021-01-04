@@ -8,7 +8,15 @@ This is an [action for GitHub](https://github.com/features/actions) that does a 
 To use this action in your own workflow, just provide it `with` any of the following parameters:
 
 -   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to `unstable` or "development" releases.
--   `packages` — A comma-separated list of extra packages needed to complete your assembly.
+-   `packages` — A comma-separated list of extra packages (see "Environment", below) needed to complete your assembly.
+
+For Maven-based roundups *only*, you can also specify these optional `with` parameters:
+
+-   `maven-test-phases` — A comma-separated list of Maven phases for testing, defaults to `test`
+-   `maven-doc-phases` — A comma-separated list of Maven phases for documentation generation, defaults to `package,site,site:stage`
+-   `maven-build-phases` — A comma-separated list of Maven phases for building the software, defaults to `compile`
+-   `maven-stable-artifact-phases` — A comma-separated list of Maven phases for stable artifact publication, defaults to `clean,package,site,deploy`
+-   `maven-unstable-artifact-phases` — A comma-separated list of Maven phases for unstable artifact publication, defaults to `clean,site,deploy`
 
 Depending on the roundup, you may also need the following environment variables:
 
@@ -36,7 +44,7 @@ This causes the Roundup to use OpenJDK 11 and also installs the `pdfgrep` packag
 
 #### ☕️ Java Note
 
-If you install an JK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environemnt variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
+If you install an JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environemnt variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
 
 
 ### 👮‍♂️ GitHub Admin Token

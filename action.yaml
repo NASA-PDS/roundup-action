@@ -10,29 +10,59 @@
 name: '🤠 PDS Engineering: Roundup'
 author: 'Sean Kelly <kelly@seankelly.biz>'
 branding:
-  icon: 'circle'
-  color: 'orange'
+    icon: 'circle'
+    color: 'orange'
 inputs:
-  assembly:
-    description: >
-      🤠 What kind of roundup are we doing, such as `stable` or `unstable` or
-      something else? We default to `unstable`.
-    required: false
-    default: 'unstable'
-  packages:
-    description: >
-      📦 What packages should be installed prior to starting the roundup? Use
-      commas to separate each. These are Alpine Linux package names.
-    required: false
-    default: ''
+    assembly:
+        description: >
+            🤠 What kind of roundup are we doing, such as `stable` or `unstable` or
+            something else? We default to `unstable`.
+        required: false
+        default: 'unstable'
+    packages:
+        description: >
+            📦 What packages should be installed prior to starting the roundup? Use
+            commas to separate each. These are Alpine Linux package names.
+        required: false
+        default: ''
+    maven-test-phases:
+        description: 🩺 Maven phases (or goals) to invoke for running tests.
+        required: false
+        default: 'test'
+    maven-doc-phases:
+        description: 📚 Maven phases (or goals) to invoke for generation documentation.
+        required: false
+        default: 'package,site,site:stage'
+    maven-build-phases:
+        description: 👷‍ Maven phases (or goals) to invoke for building software.
+        required: false
+        default: 'compile'
+    maven-stable-artifact-phases:
+        description: 😌 Maven phases (or goals) to invoke for publishing stable artifacts.
+        required: false
+        default: 'clean,package,site,deploy'
+    maven-unstable-artifact-phases:
+        description: 🤪 Maven phases (or goals) to invoke for publishing unstable artifacts.
+        required: false
+        default: 'clean,site,deploy'
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  args:
-    - '--assembly'
-    - ${{inputs.assembly}}
-    - '--packages'
-    - ${{inputs.packages}}
-    - '--debug'
+    using: 'docker'
+    image: 'Dockerfile'
+    args:
+        - '--assembly'
+        - ${{inputs.assembly}}
+        - '--packages'
+        - ${{inputs.packages}}
+        - '--maven-test-phases'
+        - ${{inputs.maven-test-phasese}}
+        - '--maven-doc-phases'
+        - ${{inputs.maven-doc-phases}}
+        - '--maven-build-phases'
+        - ${{inputs.maven-build-phases}}
+        - '--maven-stable-artifact-phases'
+        - ${{inputs.maven-stable-artifact-phases}}
+        - '--maven-unstable-artifact-phases'
+        - ${{inputs.maven-unstable-artifact-phases}}
+        - '--debug'
 
 ...

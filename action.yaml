@@ -54,7 +54,7 @@ runs:
         - '--packages'
         - ${{inputs.packages}}
         - '--maven-test-phases'
-        - ${{inputs.maven-test-phasese}}
+        - ${{inputs.maven-test-phases}}
         - '--maven-doc-phases'
         - ${{inputs.maven-doc-phases}}
         - '--maven-build-phases'

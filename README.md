@@ -180,10 +180,12 @@ For reasons I can't fathom, the Python environment used to bootstrap the [buildo
 ```console
 python3 -m venv /tmp/huh
 source /tmp/huh/bin/activate
-/tmp/huh/bin/pip install github3.py
+/tmp/huh/bin/pip install github3.py rstcloth==0.3.1
 /tmp/huh/bin/python3 bootstrap.py --setuptools-version=50.3.0
 bin/buildout
 ```
+
+(Also need rstcloth==0.3.1 in it. Whatever. I am sick to death of buildout.)
 
 You can then:
 

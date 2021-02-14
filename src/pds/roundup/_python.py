@@ -5,7 +5,7 @@
 from . import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT
+from .util import invoke, invokeGIT, BRANCH_RE, VERSION_RE
 from .errors import InvokedProcessError
 import logging, os
 
@@ -80,24 +80,23 @@ class _BuildStep(_PythonStep):
 class _GitHubReleaseStep(_PythonStep):
     '''A step that releases software to GitHub
     '''
-    def execute(self):
-        _logger.debug('Python GitHub release step')
-        if self.assembly.isStable():
-            _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
-            return
+    def _pruneDev(self):
+        '''Get rid of any "dev" tags. Apparently we want to do this always; see
+        https://github.com/NASA-PDS/roundup-action/issues/32#issuecomment-776309904
+        '''
+        _logger.debug('✂️ Pruning dev tags')
 
-        token = self.getToken()
-        if not token:
-            _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
-            return
-
-        # 😮 TODO: Use Python GitHub API
-
+        # First do an "unshallow" fetch, with tags, and getting rid of obsolete detritus.
+        # (Why they heck is it called "unshallow" when we have a perfectly good word for it in English: "deep"):
         try:
             invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
         except InvokedProcessError:
+            # For a reason I can't fathom, the --unshallow (a/k/a "deep") fails, so let's just do it again
+            # without that option:
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
             invokeGIT(['fetch', '--prune', '--tags'])
+
+        # Next, find all the tags with "dev" in their name and delete them:
         tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
         for tag in tags:
             tag = tag.strip()
@@ -109,11 +108,58 @@ class _GitHubReleaseStep(_PythonStep):
             except InvokedProcessError as ex:
                 _logger.info(
                     '🧐 Cannot delete tag %s, stdout=«%s», stderr=«%s»; but pressing on',
-                    tag,
-                    ex.error.stdout.decode('utf-8'),
-                    ex.error.stderr.decode('utf-8'),
+                    tag, ex.error.stdout.decode('utf-8'), ex.error.stderr.decode('utf-8'),
                 )
-        invoke(['python-snapshot-release', '--token', token])
+
+    def _findNextMicro(self):
+        '''Find the next micro release number from the current repository'''
+        _logger.debug('🔍 Finding next micro release')
+        try:
+            tag = invokeGIT(['describe', '--tags']).strip()
+            match = VERSION_RE.match(tag)
+            if not match or not match.group(3):
+                _logger.debug('🚭 No match for «%s» as a version tag or missing micro version number; assume 0', tag)
+                return 0
+            _logger.debug('➕ Got micro version «%s» so upping by 1', match.group(3))
+            return int(match.group(3)) + 1
+        except InvokedProcessError as ex:
+            _logger.info(
+                '🧐 Error trying to get a git description, probably means there are no tags so using 0; stderr=«%s»',
+                ex.error.stderr.decode('utf-8')
+            )
+            return 0
+
+    def _tagRelease(self):
+        '''Tag the current release using the branch name to signify the tag'''
+        _logger.debug('🏷 Tagging the release')
+        branch = invokeGIT(['branch', '--show-current']).strip()
+        if not branch:
+            _logger.debug('🕊 Cannot determine what branch we are on, so skipping tagging')
+            return
+        match = BRANCH_RE.match(branch)
+        if not match:
+            _logger.debug('🐎 Stable push to branch «%s» but not a ``release/`` branch, so skipping tagging', branch)
+            return
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        if micro is None:
+            micro = self._findNextMicro()
+        tag = f'v{major}.{minor}.{micro}'
+        _logger.debug('🆕 New tag will be %s', tag)
+        invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
+        invokeGIT(['push', '--tags'])
+
+    def execute(self):
+        '''Execute the Python GitHub release step'''
+        _logger.debug('👣 Python GitHub release step')
+        token = self.getToken()
+        if not token:
+            _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
+            return
+        self._pruneDev()
+        if self.assembly.isStable():
+            self._tagRelease()
+        invoke(['python-snapshot-release', '--token', token])  # Equivalent to ``python-release``
 
 
 class _ArtifactPublicationStep(_PythonStep):

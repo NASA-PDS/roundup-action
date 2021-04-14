@@ -156,13 +156,9 @@ class _GitHubReleaseStep(_PythonStep):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
             return
-
-        if not self.assembly.isStable():
-            self._pruneDev()
-
+        self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-
         invoke(['python-snapshot-release', '--token', token])  # Equivalent to ``python-release``
 
 

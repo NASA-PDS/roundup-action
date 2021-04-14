@@ -7,29 +7,29 @@ assignees: jordanpadams
 
 ---
 
-## 🐛 Describe the bug
-<!-- A clear and concise description of what the bug is. -->
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-## 📜 To Reproduce
+**To Reproduce**
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-## 🕵️ Expected behavior
-<!-- A clear and concise description of what you expected to happen -->
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
-## 📚 Version of Software Used
-<!-- Software should have a `-V` or `--version` flag to get this information. -->
+**Version of Software Used**
+Output from `validate -V`
 
-## 🩺 Test Data / Additional context
-<!-- If applicable, Add test data or any other context about the problem here -->
+**Test Data / Additional context**
+Add test data or any other context about the problem here.
 
-##  🏞Screenshots
-<!-- If applicable, add screenshots to help explain your problem. -->
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
-## 🖥 System Info
+**Desktop (please complete the following information):**
  - OS: [e.g. iOS]
  - Browser [e.g. chrome, safari]
  - Version [e.g. 22]
@@ -38,4 +38,5 @@ Steps to reproduce the behavior:
 
 <!-- FOR INTERNAL USE -->
 
-** :unicorn: Applicable requirements**
+**Applicable requirements**
+ :unicorn:

@@ -67,14 +67,13 @@ class NullStep(Step):
 
 class ChangeLogStep(Step):
     '''This step generates a PDS-style changelog'''
-    _sections = '{"requirements":{"prefix":"**Requirements:**","labels":["requirement"]},"improvements":{"prefix":"**Improvements:**","labels":["enhancement"]},"defects":{"prefix":"**Defects:**","labels":["bug"]}}'
+    _sections = '{"improvements":{"prefix":"**Improvements:**","labels":["Epic"]},"defects":{"prefix":"**Defects:**","labels":["bug"]},"deprecations":{"prefix":"**Deprecations:**","labels":["deprecation"]}}'
 
     def execute(self):
         token = self.getToken()
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate changelog')
             return
-
         invoke([
             'github_changelog_generator',
             '--user',
@@ -88,12 +87,10 @@ class ChangeLogStep(Step):
             '--configure-sections',
             self._sections,
             '--no-pull-requests',
-            '--exclude-labels',
-            '"wontfix", "duplicate", "invalid", "theme"',
             '--issues-label',
             '**Other closed issues:**',
             '--issue-line-labels',
-            's.low,s.medium,s.high,s.critical'
+            'high,low,medium'
         ])
         commit('CHANGELOG.md', 'Update changelog')
 

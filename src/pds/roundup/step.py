@@ -3,7 +3,7 @@
 '''🤠 PDS Roundup: A step takes you further towards a complete roundup'''
 
 from enum import Enum
-from .util import commit, invoke
+from .util import git_pull, commit, invoke
 import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
@@ -74,6 +74,7 @@ class ChangeLogStep(Step):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate changelog')
             return
+        git_pull()
         invoke([
             'github_changelog_generator',
             '--user',
@@ -104,6 +105,7 @@ class RequirementsStep(Step):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate requirements')
             return
+        git_pull()
         argv = [
             'requirement-report',
             '--format',

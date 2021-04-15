@@ -99,3 +99,4 @@ def commit(filename, message):
     invokeGIT(['pull', 'origin', 'master'])
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
+    invokeGIT(['push'])

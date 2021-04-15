@@ -21,8 +21,8 @@ class MavenContext(Context):
     '''A Maven context supports Maven (Java) software proejcts'''
     def __init__(self, cwd, environ, args):
         self.steps = {
-            StepName.null:                NullStep,
-            StepName.unitTest:            _UnitTestStep,
+            #StepName.null:                NullStep,
+            #StepName.unitTest:            _UnitTestStep,
             StepName.integrationTest:     _IntegrationTestStep,
             StepName.changeLog:           ChangeLogStep,
             StepName.requirements:        RequirementsStep,
@@ -156,19 +156,8 @@ class _BuildStep(_MavenStep):
 
 
 class _GitHubReleaseStep(_MavenStep):
-    def execute(self):
-        _logger.debug('Maven GitHub release step')
-        if self.assembly.isStable():
-            _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
-            return
 
-        token = self.getToken()
-        if not token:
-            _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
-            return
-
-        # 😮 TODO: Use Python GitHub API!
-
+    def _create_dev_tag(self):
         try:
             invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
         except InvokedProcessError:
@@ -189,7 +178,24 @@ class _GitHubReleaseStep(_MavenStep):
                     ex.error.stdout.decode('utf-8'),
                     ex.error.stderr.decode('utf-8'),
                 )
-        invoke(['maven-snapshot-release', '--token', token])
+
+
+    def execute(self):
+        _logger.debug('Maven GitHub release step')
+        if self.assembly.isStable():
+            _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
+            return
+
+        token = self.getToken()
+        if not token:
+            _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
+            return
+
+        # 😮 TODO: Use Python GitHub API!
+        if not self.assembly.isStable():
+            self._create_dev_tag()
+
+        invoke(['maven-release', '--token', token])
 
 
 class _ArtifactPublicationStep(_MavenStep):

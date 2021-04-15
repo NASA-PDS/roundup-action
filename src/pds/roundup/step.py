@@ -87,10 +87,12 @@ class ChangeLogStep(Step):
             '--configure-sections',
             self._sections,
             '--no-pull-requests',
+            '--exclude-labels',
+            '"wontfix", "duplicate", "invalid", "theme"',
             '--issues-label',
             '**Other closed issues:**',
             '--issue-line-labels',
-            'high,low,medium'
+            's.low,s.medium,s.high,s.critical'
         ])
         commit('CHANGELOG.md', 'Update changelog')
 

@@ -101,4 +101,5 @@ def commit(filename, message):
     '''
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
-    invokeGIT(['push'])
+    # TODO: understand why a simple push does not work and make it work
+    invokeGIT(['push', 'origin',  'HEAD:master', '--force'])

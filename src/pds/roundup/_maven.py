@@ -181,9 +181,6 @@ class _GitHubReleaseStep(_MavenStep):
 
     def execute(self):
         _logger.debug('maven-release release step')
-        if self.assembly.isStable():
-            _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
-            return
 
         token = self.getToken()
         if not token:

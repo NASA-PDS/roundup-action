@@ -150,17 +150,6 @@ class _DocsStep(_MavenStep):
 
 
 class _BuildStep(_MavenStep):
-    def execute(self):
-        _logger.debug('Maven build step')
-        self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
-
-        # 😮 TODO: Use Python GitHub API!
-        # create new dev tag if build is successful
-        if not self.assembly.isStable():
-            self._create_dev_tag()
-
-
-class _GitHubReleaseStep(_MavenStep):
 
     def _create_dev_tag(self):
         try:
@@ -183,6 +172,20 @@ class _GitHubReleaseStep(_MavenStep):
                     ex.error.stdout.decode('utf-8'),
                     ex.error.stderr.decode('utf-8'),
                 )
+
+
+
+    def execute(self):
+        _logger.debug('Maven build step')
+        self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
+
+        # 😮 TODO: Use Python GitHub API!
+        # create new dev tag if build is successful
+        if not self.assembly.isStable():
+            self._create_dev_tag()
+
+
+class _GitHubReleaseStep(_MavenStep):
 
     def execute(self):
         _logger.debug('maven-release release step')

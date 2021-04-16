@@ -62,10 +62,10 @@ class PDSAssembly(Assembly):
         StepName.integrationTest,
         StepName.docs,
         StepName.build,
-        StepName.changeLog,
-        StepName.requirements,
         StepName.artifactPublication,
         StepName.githubRelease,
+        StepName.changeLog,
+        StepName.requirements,
         StepName.docPublication,
     ]
 

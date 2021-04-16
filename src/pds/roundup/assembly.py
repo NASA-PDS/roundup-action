@@ -60,10 +60,10 @@ class PDSAssembly(Assembly):
     pdsSteps = [
         StepName.unitTest,
         StepName.integrationTest,
-        StepName.changeLog,
-        StepName.requirements,
         StepName.docs,
         StepName.build,
+        StepName.changeLog,
+        StepName.requirements,
         StepName.artifactPublication,
         StepName.githubRelease,
         StepName.docPublication,

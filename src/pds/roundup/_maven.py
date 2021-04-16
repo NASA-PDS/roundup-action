@@ -154,6 +154,11 @@ class _BuildStep(_MavenStep):
         _logger.debug('Maven build step')
         self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
 
+        # 😮 TODO: Use Python GitHub API!
+        # create new dev tag if build is successful
+        if not self.assembly.isStable():
+            self._create_dev_tag()
+
 
 class _GitHubReleaseStep(_MavenStep):
 
@@ -186,10 +191,6 @@ class _GitHubReleaseStep(_MavenStep):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot release to GitHub')
             return
-
-        # 😮 TODO: Use Python GitHub API!
-        if not self.assembly.isStable():
-            self._create_dev_tag()
 
         invoke(['maven-release', '--token', token])
 

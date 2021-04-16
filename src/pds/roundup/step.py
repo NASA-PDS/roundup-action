@@ -89,7 +89,7 @@ class ChangeLogStep(Step):
             self._sections,
             '--no-pull-requests',
             '--exclude-labels',
-            '"wontfix", "duplicate", "invalid", "theme"',
+            'wontfix,duplicate,invalid,theme',
             '--issues-label',
             '**Other closed issues:**',
             '--issue-line-labels',

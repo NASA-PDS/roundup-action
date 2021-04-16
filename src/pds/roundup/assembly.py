@@ -26,13 +26,16 @@ class Assembly(object):
         _logger.debug('🤠 Preparing roundup for %r with the following steps: %r', self.context, self.stepNames)
         steps = []
         for stepName in self.stepNames:
+            _logger.debug("Creating step %s", stepName)
             step = self.context.createStep(stepName, self)
             if step:
+                _logger.debug("Adding step %s", step.__class__.__name__)
                 steps.append(step)
             else:
                 _logger.info('For context %r no step was available for %s; ignoring this step', self.context, stepName)
         _logger.debug('Executing roundup')
         for step in steps:
+            _logger.info("Executing step %s", step.__class__.__name__)
             step.execute()
 
     def isStable(self):

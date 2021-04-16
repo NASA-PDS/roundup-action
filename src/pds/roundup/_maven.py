@@ -21,8 +21,8 @@ class MavenContext(Context):
     '''A Maven context supports Maven (Java) software proejcts'''
     def __init__(self, cwd, environ, args):
         self.steps = {
-            #StepName.null:                NullStep,
-            #StepName.unitTest:            _UnitTestStep,
+            StepName.null:                NullStep,
+            StepName.unitTest:            _UnitTestStep,
             StepName.integrationTest:     _IntegrationTestStep,
             StepName.changeLog:           ChangeLogStep,
             StepName.requirements:        RequirementsStep,
@@ -179,9 +179,8 @@ class _GitHubReleaseStep(_MavenStep):
                     ex.error.stderr.decode('utf-8'),
                 )
 
-
     def execute(self):
-        _logger.debug('Maven GitHub release step')
+        _logger.debug('maven-release release step')
         if self.assembly.isStable():
             _logger.debug("Stable releases don't automatically push a snapshot tag to GitHub")
             return
@@ -200,10 +199,15 @@ class _GitHubReleaseStep(_MavenStep):
 
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
+
         if self.assembly.isStable():
-            args = ['--activate-profiles', 'release']
-            args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
-            self.invokeMaven(args)
+            try:
+                args = ['--activate-profiles', 'release']
+                args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
+                self.invokeMaven(args)
+            except subprocess.CalledProcessError as cpe:
+                _logger.error("Error while releasing on the artifactory %s", cpe)
+                _logger.info("let's assume it is because this version has already been released, and move on next step")
         else:
             self.invokeMaven(self.assembly.context.args.maven_unstable_artifact_phases.split(','))
 

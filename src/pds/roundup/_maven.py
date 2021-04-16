@@ -205,8 +205,8 @@ class _ArtifactPublicationStep(_MavenStep):
                 args = ['--activate-profiles', 'release']
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)
-            except subprocess.CalledProcessError as cpe:
-                _logger.error("Error while releasing on the artifactory %s", cpe)
+            except InvokedProcessError as ipe:
+                _logger.error("Error while releasing on the artifactory %s", ipe)
                 _logger.info("let's assume it is because this version has already been released, and move on next step")
         else:
             self.invokeMaven(self.assembly.context.args.maven_unstable_artifact_phases.split(','))

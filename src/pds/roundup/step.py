@@ -67,7 +67,9 @@ class NullStep(Step):
 
 class ChangeLogStep(Step):
     '''This step generates a PDS-style changelog'''
-    _sections = '{"improvements":{"prefix":"**Improvements:**","labels":["Epic"]},"defects":{"prefix":"**Defects:**","labels":["bug"]},"deprecations":{"prefix":"**Deprecations:**","labels":["deprecation"]}}'
+    _sections = '{"requirements":{"prefix":"**Requirements:**","labels":["requirement"]},' \
+                ' "improvements":{"prefix":"**Improvements:**","labels":["enhancement"]},' \
+                ' "defects":{"prefix":"**Defects:**","labels":["bug"]}}'
 
     def execute(self):
         token = self.getToken()

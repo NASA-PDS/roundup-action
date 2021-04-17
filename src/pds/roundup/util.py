@@ -105,5 +105,5 @@ def commit(filename, message):
     try:
         invokeGIT(['push'])
     except subprocess.CalledProcessError as cpe:
-        _logger.info(f'Simple push failed %s, try push origin HEAD:master --force', cpe)
+        _logger.info("Simple push failed %s, try push origin HEAD:master --force", cpe)
         invokeGIT(['push', 'origin',  'HEAD:master', '--force'])

@@ -102,4 +102,8 @@ def commit(filename, message):
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work
-    invokeGIT(['push', 'origin',  'HEAD:master', '--force'])
+    try:
+        invokeGIT(['push'])
+    except subprocess.CalledProcessError as cpe:
+        _logger.info(f'Simple push failed %s, try push origin HEAD:master --force', cpe)
+        invokeGIT(['push', 'origin',  'HEAD:master', '--force'])

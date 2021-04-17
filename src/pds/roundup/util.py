@@ -92,8 +92,8 @@ def invokeGIT(gitArgs):
 def git_pull():
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
-    invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@github.com'])
-    invokeGIT(['config', '--local', 'user.name', 'PDS dev admin'])
+    #invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@github.com'])
+    #invokeGIT(['config', '--local', 'user.name', 'PDS dev admin'])
     invokeGIT(['pull', 'origin', 'master'])
 
 def commit(filename, message):

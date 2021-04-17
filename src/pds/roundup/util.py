@@ -92,9 +92,11 @@ def invokeGIT(gitArgs):
 def git_pull():
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
-    invokeGIT(['config', '--local', 'user.email', 'github-actions-bot@github.com'])
-    invokeGIT(['config', '--local', 'user.name', 'github-actions'])
+    invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@github.com'])
+    invokeGIT(['config', '--local', 'user.name', 'PDS dev admin'])
     invokeGIT(['pull', 'origin', 'master'])
+
+
 
 def commit(filename, message):
     '''Commit the file named ``filename`` to the local Git repository with the given ``message``.
@@ -102,8 +104,5 @@ def commit(filename, message):
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work
-    try:
-        invokeGIT(['push'])
-    except subprocess.CalledProcessError as cpe:
-        _logger.info("Simple push failed %s, try push origin HEAD:master --force", cpe)
-        invokeGIT(['push', 'origin',  'HEAD:master', '--force'])
+    # see bug https://github.com/actions/checkout/issues/317
+    invokeGIT(['push', 'origin',  'HEAD:master', '--force'])

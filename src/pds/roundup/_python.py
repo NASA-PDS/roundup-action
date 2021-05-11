@@ -5,7 +5,7 @@
 from . import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, VERSION_RE
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro
 from .errors import InvokedProcessError
 import logging, os
 
@@ -111,24 +111,6 @@ class _GitHubReleaseStep(_PythonStep):
                     tag, ex.error.stdout.decode('utf-8'), ex.error.stderr.decode('utf-8'),
                 )
 
-    def _findNextMicro(self):
-        '''Find the next micro release number from the current repository'''
-        _logger.debug('🔍 Finding next micro release')
-        try:
-            tag = invokeGIT(['describe', '--tags']).strip()
-            match = VERSION_RE.match(tag)
-            if not match or not match.group(3):
-                _logger.debug('🚭 No match for «%s» as a version tag or missing micro version number; assume 0', tag)
-                return 0
-            _logger.debug('➕ Got micro version «%s» so upping by 1', match.group(3))
-            return int(match.group(3)) + 1
-        except InvokedProcessError as ex:
-            _logger.info(
-                '🧐 Error trying to get a git description, probably means there are no tags so using 0; stderr=«%s»',
-                ex.error.stderr.decode('utf-8')
-            )
-            return 0
-
     def _tagRelease(self):
         '''Tag the current release using the branch name to signify the tag'''
         _logger.debug('🏷 Tagging the release')
@@ -143,7 +125,7 @@ class _GitHubReleaseStep(_PythonStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
-            micro = self._findNextMicro()
+            micro = findNextMicro()
         tag = f'v{major}.{minor}.{micro}'
         _logger.debug('🆕 New tag will be %s', tag)
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
@@ -159,7 +141,11 @@ class _GitHubReleaseStep(_PythonStep):
         self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-        invoke(['python-snapshot-release', '--token', token])  # Equivalent to ``python-release``
+            # NASA-PDS/roundup-action#25; although ``python-release`` and ``python-snapshot-release`` are
+            # the same script, they must examine argv[0] to change their behavior.
+            invoke(['python-release', '--token', token])
+        else:
+            invoke(['python-snapshot-release', '--token', token])
 
 
 class _ArtifactPublicationStep(_PythonStep):

@@ -63,9 +63,11 @@ class PDSAssembly(Assembly):
         StepName.docs,
         StepName.build,
         StepName.artifactPublication,
-        StepName.githubRelease,
-        StepName.changeLog,
+        # NASA-PDS/roundup-action#29: generate the requirements before tagging the release
         StepName.requirements,
+        # NASA-PDS/roundup-action#29: generate the changelog before tagging the release
+        StepName.changeLog,
+        StepName.githubRelease,
         StepName.docPublication,
     ]
 

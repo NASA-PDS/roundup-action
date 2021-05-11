@@ -97,7 +97,6 @@ def git_pull():
     invokeGIT(['pull', 'origin', 'master'])
 
 
-
 def commit(filename, message):
     '''Commit the file named ``filename`` to the local Git repository with the given ``message``.
     '''
@@ -106,3 +105,22 @@ def commit(filename, message):
     # TODO: understand why a simple push does not work and make it work
     # see bug https://github.com/actions/checkout/issues/317
     invokeGIT(['push', 'origin',  'HEAD:master', '--force'])
+
+
+def findNextMicro():
+    '''Find the next micro release number from the current repository'''
+    _logger.debug('🔍 Finding next micro release')
+    try:
+        tag = invokeGIT(['describe', '--tags']).strip()
+        match = VERSION_RE.match(tag)
+        if not match or not match.group(3):
+            _logger.debug('🚭 No match for «%s» as a version tag or missing micro version number; assume 0', tag)
+            return 0
+        _logger.debug('➕ Got micro version «%s» so upping by 1', match.group(3))
+        return int(match.group(3)) + 1
+    except InvokedProcessError as ex:
+        _logger.info(
+            '🧐 Error trying to get a git description, probably means there are no tags so using 0; stderr=«%s»',
+            ex.error.stderr.decode('utf-8')
+        )
+        return 0

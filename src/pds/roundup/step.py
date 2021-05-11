@@ -3,8 +3,8 @@
 '''🤠 PDS Roundup: A step takes you further towards a complete roundup'''
 
 from enum import Enum
-from .util import git_pull, commit, invoke
-import logging, github3, tempfile, zipfile, os
+from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, BRANCH_RE
+import logging, github3, tempfile, zipfile, os, shutil
 
 _logger = logging.getLogger(__name__)
 
@@ -67,9 +67,38 @@ class NullStep(Step):
 
 class ChangeLogStep(Step):
     '''This step generates a PDS-style changelog'''
+
+    # NASA-PDS/roundup-action#29: do not use these _sections anymore
+    # _sections = '{"requirements":{"prefix":"**Requirements:**","labels":["requirement"]},' \
+    #             ' "improvements":{"prefix":"**Improvements:**","labels":["enhancement"]},' \
+    #             ' "defects":{"prefix":"**Defects:**","labels":["bug"]}}'
+    #
+    # Instead, use these (although I can't detect any differences between them):
     _sections = '{"requirements":{"prefix":"**Requirements:**","labels":["requirement"]},' \
                 ' "improvements":{"prefix":"**Improvements:**","labels":["enhancement"]},' \
                 ' "defects":{"prefix":"**Defects:**","labels":["bug"]}}'
+
+    def _determineFutureRelease(self):
+        '''Figure out a suitable setting for the changelog generator's ``--future-release`` argument.
+        For NASA-PDS/roundup-action#29.
+        '''
+        _logger.debug('🏷 For changelog generation, figuring out the future release')
+        branch = invokeGIT(['branch', '--show-current']).strip()
+        if not branch:
+            _logger.debug('🕊 Cannot determine what branch we are on, so using «unknown»')
+            return '«unknown»'
+        match = BRANCH_RE.match(branch)
+        if not match:
+            _logger.debug('🐎 This is not a ``release/`` branch, so using «unknown»')
+            return '«unknown»'
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 Okay, we got version %d.%d.%s', major, minor, micro)
+        if micro is None:
+            _logger.debug('🔬 No micro release, so figuring out one by context')
+            micro = findNextMicro()
+        tag = f'{major}.{minor}.{micro}'
+        _logger.debug('🆕 Future release will be %s', tag)
+        return tag
 
     def execute(self):
         token = self.getToken()
@@ -87,6 +116,9 @@ class ChangeLogStep(Step):
             'CHANGELOG.md',
             '--token',
             token,
+            # NASA-PDS/roundup-action#29, include the next release in the changelog:
+            '--future-release',
+            self._determineFutureRelease(),
             '--configure-sections',
             self._sections,
             '--no-pull-requests',
@@ -95,7 +127,10 @@ class ChangeLogStep(Step):
             '--issues-label',
             '**Other closed issues:**',
             '--issue-line-labels',
-            's.low,s.medium,s.high,s.critical'
+            # NASA-PDS/roundup-action#29, change these labels from this:
+            # 's.low,s.medium,s.high,s.critical'
+            # to this:
+            's.critical,s.high,s.low,s.medium'
         ])
         commit('CHANGELOG.md', 'Update changelog')
 
@@ -168,6 +203,20 @@ class DocPublicationStep(Step):
             # Add the new ZIP file as a downloadable asset
             with open(tmpFileName, 'rb') as tmpFile:
                 release.upload_asset('application/zip', 'documentation.zip', tmpFile, 'Documentation (zip)')
+
+            # Per NASA-PDS/roundup-action#28 we also publish the documentation to GitHub pages—but for
+            # stable releases only.
+            if self.assembly.isStable():
+                # See https://github.com/X1011/git-directory-deploy for details on ``deploy.sh``
+                # which is now part of the ``github-actions-base``.
+                invoke([
+                    'env',
+                    'GIT_DEPLOY_DIR=' + self.getDocDir(),
+                    'GIT_DEPLOY_BRANCH=gh-pages',
+                    'GIT_DEPLOY_REPO=origin',
+                    '/usr/local/bin/deploy.sh',
+                    '--allow-empty',
+                ])
 
         except StopIteration:
             _logger.info('🧐 No releases found at all, so I cannot publish documentation assets to them')

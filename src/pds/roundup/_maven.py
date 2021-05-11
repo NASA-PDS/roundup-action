@@ -182,8 +182,6 @@ class _GitHubReleaseStep(_MavenStep):
                     ex.error.stderr.decode('utf-8'),
                 )
 
-
-
     def execute(self):
         _logger.debug('maven-release release step')
 
@@ -196,9 +194,11 @@ class _GitHubReleaseStep(_MavenStep):
         # create new dev tag if build is successful
         if not self.assembly.isStable():
             self._create_dev_tag()
-
-        invoke(['maven-release', '--token', token])
-
+            # NASA-PDS/roundup-action#25; although ``maven-release`` and ``maven-snapshot-release`` are
+            # the same script, they must examine argv[0] to change their behavior.
+            invoke(['maven-release', '--token', token])
+        else:
+            invoke(['maven-snapshot-release', '--token', token])
 
 
 class _ArtifactPublicationStep(_MavenStep):

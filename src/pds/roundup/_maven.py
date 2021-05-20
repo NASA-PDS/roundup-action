@@ -216,6 +216,6 @@ class _ArtifactPublicationStep(_MavenStep):
             self.invokeMaven(self.assembly.context.args.maven_unstable_artifact_phases.split(','))
 
 
-class _DocPublicationStep(DocPublicationStep):  # Could multiply inherit from _MavenStep too for semantics
-    def getDocDir(self):
-        return 'target/staging'
+class _DocPublicationStep(DocPublicationStep):
+
+    default_documentation_dir = 'target/staging'

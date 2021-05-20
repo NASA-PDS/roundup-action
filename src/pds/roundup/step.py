@@ -167,7 +167,11 @@ class RequirementsStep(Step):
 
 class DocPublicationStep(Step):
     def getDocDir(self):
-        raise NotImplementedError('Subclasses must implement ``getDocDir``')
+        if self.assembly.context.args.documentation_dir:
+            return self.assembly.context.args.documentation_dir
+        else:
+            return self.default_documentation_dir
+
     def execute(self):
         token = self.getToken()
         if not token:

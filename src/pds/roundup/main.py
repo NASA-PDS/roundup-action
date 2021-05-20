@@ -31,6 +31,14 @@ def _parseArgs():
         help='📦 Additional pacakges (separated with a comma) to install prior to assembly'
     )
 
+    parser.add_argument(
+        '-d', '--documentation-dir', default='None',
+        help='📦 Directory where the online documentation is generated, '
+             'default value are /docs/build for python and /target/staging for maven'
+    )
+
+
+
     # Maven 😩
     group = parser.add_argument_group('Maven phases (or goals), comma-separated')
     group.add_argument('--maven-test-phases', help='🩺 Test (%(default)s)', default='test')

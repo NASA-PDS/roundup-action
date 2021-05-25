@@ -176,6 +176,5 @@ class _ArtifactPublicationStep(_PythonStep):
 
 
 class _DocPublicationStep(DocPublicationStep):
-    '''A step that publishes documentation, Python-style'''
-    def getDocDir(self):
-        return 'docs/build'
+
+    default_documentation_dir = 'docs/build'

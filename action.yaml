@@ -45,6 +45,10 @@ inputs:
         description: 🤪 Maven phases (or goals) to invoke for publishing unstable artifacts.
         required: false
         default: 'clean,site,deploy'
+    documentation-dir:
+        description: 🤪 Maven phases (or goals) to invoke for publishing unstable artifacts.
+        required: false
+        default: ''
 runs:
     using: 'docker'
     image: 'Dockerfile'
@@ -63,6 +67,8 @@ runs:
         - ${{inputs.maven-stable-artifact-phases}}
         - '--maven-unstable-artifact-phases'
         - ${{inputs.maven-unstable-artifact-phases}}
+        - '--documentation-dir'
+        - ${{inputs.documentation-dir}}
         - '--debug'
 
 ...

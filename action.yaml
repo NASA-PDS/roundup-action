@@ -46,7 +46,7 @@ inputs:
         required: false
         default: 'clean,site,deploy'
     documentation-dir:
-        description: 🤪 Maven phases (or goals) to invoke for publishing unstable artifacts.
+        description: 🤪 local folder of the project workspace from where documentation will be published on gh-pages
         required: false
         default: ''
 runs:

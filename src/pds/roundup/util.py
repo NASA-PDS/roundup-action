@@ -94,7 +94,7 @@ def git_pull():
     # But I'm in a rush:
     invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
-    invokeGIT(['pull', 'origin', 'master'])
+    invokeGIT(['pull', 'origin', 'main'])
 
 
 def commit(filename, message):
@@ -104,7 +104,7 @@ def commit(filename, message):
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work
     # see bug https://github.com/actions/checkout/issues/317
-    invokeGIT(['push', 'origin',  'HEAD:master', '--force'])
+    invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
 
 
 def findNextMicro():

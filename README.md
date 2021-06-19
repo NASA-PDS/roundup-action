@@ -111,7 +111,7 @@ name: 📦 CI/CD
 on:
     push:
       branches:
-          - master
+          - main
 
 jobs:
     roundup:
@@ -123,7 +123,7 @@ jobs:
                 uses: actions/checkout@v2
             -
                 name: 🐄 Rounding it up
-                uses: NASA-PDS/roundup-action@master
+                uses: NASA-PDS/roundup-action@main
                 with:
                     assembly: stable
                     packages: cowpoke,chili-sort,lasso

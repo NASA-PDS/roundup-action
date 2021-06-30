@@ -2,25 +2,7 @@
 
 '''🤠 PDS Roundup: Continuous Integration and Development'''
 
-from .context import Context
-from .step import Step
 import pkg_resources
-
-
-def contextFactories():
-    # ☑️ TODO: Think about a priority list instead of a dictionary.
-    #
-    # For example, we could have a PythonBuildoutContext which has setup.cfg, setup.py, but also
-    # buildout.cfg and bootstrap.py; if we detect those, we can do a builout-based context instead
-    # of a plain Python context.
-    from ._python import PythonContext
-    from ._maven import MavenContext
-    return {
-        'setup.cfg':   PythonContext,
-        'setup.py':    PythonContext,
-        'pom.xml':     MavenContext,
-        'project.xml': MavenContext
-    }
 
 
 def _read_version():
@@ -38,6 +20,4 @@ __version__ = VERSION = _read_version()
 __all__ = (
     __version__,
     VERSION,
-    Context,
-    Step,
 )

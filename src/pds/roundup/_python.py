@@ -2,7 +2,7 @@
 
 '''PDS Roundup: Python context'''
 
-from . import Context
+from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro

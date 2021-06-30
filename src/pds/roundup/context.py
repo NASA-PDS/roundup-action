@@ -33,7 +33,7 @@ class Context(object):
         '''Create a new context for given current working directory, ``cwd``, and the given
         ``environ``ment variables, and the parsed command-line ``args``.
         '''
-        from . import contextFactories
+        from .util import contextFactories
         factories, factory = contextFactories(), None
         for entry in os.listdir(cwd):
             factory = factories.get(entry)

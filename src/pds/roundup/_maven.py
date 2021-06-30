@@ -2,7 +2,7 @@
 
 '''🤠 PDS Roundup: Maven context'''
 
-from . import Context
+from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
 from .util import invoke, invokeGIT

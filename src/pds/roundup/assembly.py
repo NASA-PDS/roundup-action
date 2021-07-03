@@ -84,3 +84,20 @@ class StablePDSAssembly(PDSAssembly):
 class UnstablePDSAssembly(PDSAssembly):
     '''The unstable (in-development) PDS assembly'''
     pass
+
+
+class IntegrativePDSAssembly(UnstablePDSAssembly):
+    '''An assembly for integrations; this is unstable but omits the requirements and
+    changelog generation steps.
+
+    See https://github.com/NASA-PDS/roundup-action/issues/46 for more information.
+    '''
+    pdsSteps = [
+        StepName.unitTest,
+        StepName.integrationTest,
+        StepName.docs,
+        StepName.build,
+        StepName.artifactPublication,
+        StepName.githubRelease,
+        StepName.docPublication,
+    ]

@@ -7,9 +7,19 @@
 from .context import Context
 from .errors import InvokedProcessError
 from .util import populateEnvVars, invoke
+from .assembly import StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly
+
 import os, logging, argparse, sys
 
 _logger = logging.getLogger(__name__)
+
+_assemblies = {
+    'stable': StablePDSAssembly,
+    'unstable': UnstablePDSAssembly,
+    'integration': IntegrativePDSAssembly,
+    'noop': NoOpAssembly,
+}
+_defaultAssembly = 'unstable'
 
 
 def _parseArgs():
@@ -23,8 +33,8 @@ def _parseArgs():
         help='🗺 Context directory where the roundup should happen, default %(default)s'
     )
     parser.add_argument(
-        '-a', '--assembly', default='unstable',
-        help='🤪 Unstable, stable, or other mode of assembly; default %(default)s'
+        '-a', '--assembly', default=_defaultAssembly, choices=_assemblies.keys(),
+        help=f'🤪 Mode of assembly; default %(default)s'
     )
     parser.add_argument(
         '-p', '--packages',
@@ -36,8 +46,6 @@ def _parseArgs():
         help='📦 Directory where the online documentation is generated, '
              'default value are /docs/build for python and /target/staging for maven'
     )
-
-
 
     # Maven 😩
     group = parser.add_argument_group('Maven phases (or goals), comma-separated')
@@ -91,20 +99,8 @@ def main():
     # ugly setting here:
     os.environ['JAVA_HOME'] = os.environ.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
 
-    # This isn't tremendously "OO" but until we need to support other kinds of assemblies, it's fine:
-    if args.assembly == 'stable':
-        from .assembly import StablePDSAssembly
-        assembly = StablePDSAssembly(context)
-    elif args.assembly == 'unstable':
-        from .assembly import UnstablePDSAssembly
-        assembly = UnstablePDSAssembly(context)
-    elif args.assembly == 'noop':
-        from .assembly import NoOpAssembly
-        assembly = NoOpAssembly(context)
-    else:
-        raise NotImplementedError(f"Don't know how to roundup an assembly called «{args.assembly}»")
-
-    assembly.roundup()
+    # Here we go daddy
+    _assemblies[args.assembly](context).roundup()
     sys.exit(0)
 
 

@@ -7,7 +7,7 @@ This is an [action for GitHub](https://github.com/features/actions) that does a 
 
 To use this action in your own workflow, just provide it `with` any of the following parameters:
 
--   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to `unstable` or "development" releases.
+-   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to `unstable` or "development" releases; for details about assemblies, see below.
 -   `packages` — A comma-separated list of extra packages (see "Environment", below) needed to complete your assembly.
 
 For Maven-based roundups *only*, you can also specify these optional `with` parameters:
@@ -101,6 +101,16 @@ This puts the encoded private key onto your pasteboard, ready for pasting into G
 **📒 Note:** Don't forget to upload the corresponding _public_ key to various keyservers, such as keys.gnupg.net, keys.openpgp.org, keyserver.ubuntu.com pool.sks-keyservers.net, etc.
 
 
+### 🧩 Assemblies
+
+There are several different flavors of roundups that you can specify `with` the `assembly` parameter in your workflow. The flavor of assembly tells if you're doing a stable versus an unstable software release and what steps of the roundup to perform. They are as follows:
+
+- `stable` — this is the "standard" PDS assembly for stable software releases. It does the steps of unit testing, integration testing, documentation generation, software building, artifact publication, requirements generation, changelog generation, GitHub releasing, and documentation publication. Because it's a "stable" assembly, it sends all this to production servers; that means non-SNAPSHOT releases to OSSRH for Maven artifacts, the production PyPI for Python artifacts, etc.
+- `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, etc. This is the default if you don't specify an assembly.
+- `integration` — this is the same as the `unstable` PDS assembly, but omits the requirements generation and changelog generation steps.
+- `noop` — this is an assembly that does nothing, i.e., "no operation".
+
+
 ## 💁‍♀️ Demonstration
 
 The following is a brief example how a workflow that shows how this action can be used:
@@ -147,7 +157,7 @@ You can then poke around in it:
 
     docker container run --interactive --tty --rm --name roundup --volume ${PWD}:/mnt --entrypoint /bin/sh pds-roundup:latest
 
-But you could also invoke it the way GitHub Actions does:
+But you could also invoke it the way GitHub Actions does; for example:
 
     docker container run --interactive --tty --rm --name roundup-dev --workdir /github/workspace \
         --env INPUT_MODE --env HOME --env GITHUB_JOB --env GITHUB_REF --env GITHUB_SHA --env GITHUB_REPOSITORY \
@@ -168,31 +178,9 @@ But you could also invoke it the way GitHub Actions does:
         --volume /Users/joe/Documents/Development/test-repo:"/github/workspace" \
         pds-roundup --debug --assembly unstable
 
-Or run it locally:
+Or build it to run outside of a container; for example:
 
-    env ADMIN_GITHUB_TOKEN=abcd0123 GITHUB_REPOSITORY=owner/repo GITHUB_WORKSPACE=/tmp PATH=${PWD}/bin:${PATH} ${PWD}/bin/roundup --debug --assembly unstable
-
-
-### 🤷‍♀️ Buildout
-
-For reasons I can't fathom, the Python environment used to bootstrap the [buildout](http://buildout.org/) must have [github3.py](https://pypi.org/project/github3.py/) installed into it, despite `github3.py` listed as a dependency in this package. So, as of 2020-10-05, here are the gymnastics:
-
-```console
-python3 -m venv /tmp/huh
-source /tmp/huh/bin/activate
-/tmp/huh/bin/pip install github3.py rstcloth==0.3.1
-/tmp/huh/bin/python3 bootstrap.py --setuptools-version=50.3.0
-bin/buildout
-```
-
-(Also need rstcloth==0.3.1 in it. Whatever. I am sick to death of buildout.)
-
-You can then:
-
-- Run `bin/python` to get a Python with dependencies "baked in" for testing or exploration
-- Run `bin/roundup` to try a local roundup (but be prepared to pass in an insane amount of environment variables; see above)
-- Run `bin/test` to execute unit, functional, and integration tests with XML test reports suitable for Jenkins or other CI/CD tools
-- Expore `parts/omelette` for a greppable source tree of the Roundup code and all its dependencies
-
-
-
+    python3 -m venv venv
+    venv/bin/pip install --quiet --upgrade setuptools wheel pip
+    venv/bin/pip install --editable .
+    env ADMIN_GITHUB_TOKEN=abcd0123 GITHUB_REPOSITORY=owner/repo GITHUB_WORKSPACE=/tmp PATH=${PWD}/bin:${PATH} venv/bin/roundup --debug --assembly unstable

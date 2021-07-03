@@ -124,3 +124,19 @@ def findNextMicro():
             ex.error.stderr.decode('utf-8')
         )
         return 0
+
+
+def contextFactories():
+    # ☑️ TODO: Think about a priority list instead of a dictionary.
+    #
+    # For example, we could have a PythonBuildoutContext which has setup.cfg, setup.py, but also
+    # buildout.cfg and bootstrap.py; if we detect those, we can do a builout-based context instead
+    # of a plain Python context.
+    from ._python import PythonContext
+    from ._maven import MavenContext
+    return {
+        'setup.cfg':   PythonContext,
+        'setup.py':    PythonContext,
+        'pom.xml':     MavenContext,
+        'project.xml': MavenContext
+    }

@@ -88,8 +88,11 @@ class _BuildStep(_PythonStep):
             invokeGIT(['config', '--global', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
             invokeGIT(['config', '--global', 'user.name', 'PDS Engineering Continuous Integration'])
             invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
-
-        invoke(['python', 'setup.py', 'bdist_wheel'])
+            invoke(['python', 'setup.py', 'bdist_wheel'])
+            invokeGIT(['tag', '--delete', tag])
+        else:
+            # Stable releases, just build away:
+            invoke(['python', 'setup.py', 'bdist_wheel'])
 
 
 class _GitHubReleaseStep(_PythonStep):

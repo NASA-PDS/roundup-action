@@ -7,7 +7,7 @@ from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro
 from .errors import InvokedProcessError
-import logging, os
+import logging, os, datetime, re
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +74,18 @@ class _DocsStep(_PythonStep):
 class _BuildStep(_PythonStep):
     '''A step that makes a Python wheel (of cheese)'''
     def execute(self):
+        if not self.assembly.isStable():
+            # NASA-PDS/pds-template-repo-python#14; make special tags so Versioneer can generate
+            # a compliant version string and so we can shoehorn dumb Maven-style "SNAPSHOT" releases
+            # into the Test PyPi—something for which is was never intended 🙄
+            candidate = invokeGIT(['describe', '--always', '--tags'])
+            match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
+            if match is None:
+                _logger.info("🤷‍♀️ No 'v1.2.3' style tags in this repo so skipping unstable publication")
+            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            tag = match.group(1) + '-' + slate
+            invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
+
         invoke(['python', 'setup.py', 'bdist_wheel'])
 
 

@@ -84,7 +84,7 @@ class _BuildStep(_PythonStep):
                 _logger.info("🤷‍♀️ No 'v1.2.3' style tags in this repo so skipping unstable build")
                 return
             slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            tag = match.group(1) + '-' + slate
+            tag = match.group(1) + '-dev-' + slate
             invokeGIT(['config', '--global', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
             invokeGIT(['config', '--global', 'user.name', 'PDS Engineering Continuous Integration'])
             invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])

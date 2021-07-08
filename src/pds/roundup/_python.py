@@ -76,8 +76,8 @@ class _BuildStep(_PythonStep):
     def execute(self):
         if not self.assembly.isStable():
             # NASA-PDS/pds-template-repo-python#14; make special tags so Versioneer can generate
-            # a compliant version string and so we can shoehorn dumb Maven-style "SNAPSHOT" releases
-            # into the Test PyPi—something for which is was never intended 🙄
+            # a compliant version string and so we can shoehorn Maven-style "SNAPSHOT" releases
+            # into the Test PyPi—something for which I'm not sure it was even intended 😒
             candidate = invokeGIT(['describe', '--always', '--tags'])
             match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
             if match is None:
@@ -195,7 +195,10 @@ class _ArtifactPublicationStep(_PythonStep):
             invoke(argv)
         except InvokedProcessError:
             # Unstable releases, let it slide; this is test.pypi.org anyway, and we are abusing
-            # it for snapshot releases, when it's supposed to be just for testing release tools
+            # it for snapshot releases, when it's probably just for testing release tools—which
+            # in a way, is what this is.
+            #
+            # (We really ought to re-think (ab)using test.pypi.org in this way.)
             if self.assembly.isStable(): raise
 
 

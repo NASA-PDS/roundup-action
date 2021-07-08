@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config
 from .errors import InvokedProcessError
 import logging, os, datetime, re
 
@@ -85,11 +85,12 @@ class _BuildStep(_PythonStep):
                 return
             slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
             tag = match.group(1) + '-dev-' + slate
-            invokeGIT(['config', '--global', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
-            invokeGIT(['config', '--global', 'user.name', 'PDS Engineering Continuous Integration'])
-            invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
-            invoke(['python', 'setup.py', 'bdist_wheel'])
-            invokeGIT(['tag', '--delete', tag])
+            git_config()
+            try:
+                invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
+                invoke(['python', 'setup.py', 'bdist_wheel'])
+            finally:
+                invokeGIT(['tag', '--delete', tag])
         else:
             # Stable releases, just build away:
             invoke(['python', 'setup.py', 'bdist_wheel'])
@@ -190,7 +191,12 @@ class _ArtifactPublicationStep(_PythonStep):
         argv.extend([os.path.join(dists, i) for i in os.listdir(dists) if os.path.isfile(os.path.join(dists, i))])
         # 😮 TODO: Use Twine API directly
         # But I'm in a rush:
-        invoke(argv)
+        try:
+            invoke(argv)
+        except InvokedProcessError:
+            # Unstable releases, let it slide; this is test.pypi.org anyway, and we are abusing
+            # it for snapshot releases, when it's supposed to be just for testing release tools
+            if self.assembly.isStable(): raise
 
 
 class _DocPublicationStep(DocPublicationStep):

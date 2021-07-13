@@ -5,9 +5,9 @@
 from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config
 from .errors import InvokedProcessError
-import logging, os
+import logging, os, datetime, re
 
 _logger = logging.getLogger(__name__)
 
@@ -74,7 +74,26 @@ class _DocsStep(_PythonStep):
 class _BuildStep(_PythonStep):
     '''A step that makes a Python wheel (of cheese)'''
     def execute(self):
-        invoke(['python', 'setup.py', 'bdist_wheel'])
+        if not self.assembly.isStable():
+            # NASA-PDS/pds-template-repo-python#14; make special tags so Versioneer can generate
+            # a compliant version string and so we can shoehorn Maven-style "SNAPSHOT" releases
+            # into the Test PyPi—something for which I'm not sure it was even intended 😒
+            candidate = invokeGIT(['describe', '--always', '--tags'])
+            match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
+            if match is None:
+                _logger.info("🤷‍♀️ No 'v1.2.3' style tags in this repo so skipping unstable build")
+                return
+            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            tag = match.group(1) + '-dev-' + slate
+            git_config()
+            try:
+                invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
+                invoke(['python', 'setup.py', 'bdist_wheel'])
+            finally:
+                invokeGIT(['tag', '--delete', tag])
+        else:
+            # Stable releases, just build away:
+            invoke(['python', 'setup.py', 'bdist_wheel'])
 
 
 class _GitHubReleaseStep(_PythonStep):
@@ -172,7 +191,15 @@ class _ArtifactPublicationStep(_PythonStep):
         argv.extend([os.path.join(dists, i) for i in os.listdir(dists) if os.path.isfile(os.path.join(dists, i))])
         # 😮 TODO: Use Twine API directly
         # But I'm in a rush:
-        invoke(argv)
+        try:
+            invoke(argv)
+        except InvokedProcessError:
+            # Unstable releases, let it slide; this is test.pypi.org anyway, and we are abusing
+            # it for snapshot releases, when it's probably just for testing release tools—which
+            # in a way, is what this is.
+            #
+            # (We really ought to re-think (ab)using test.pypi.org in this way.)
+            if self.assembly.isStable(): raise
 
 
 class _DocPublicationStep(DocPublicationStep):

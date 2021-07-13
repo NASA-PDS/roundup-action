@@ -1,13 +1,13 @@
 # 🤠 PDS Engineering Actions: Roundup
 
-This is an [action for GitHub](https://github.com/features/actions) that does a "roundup"; that is, continuous integration and continuous delivery of PDS software. (Somehow we got started on this "Western" kind of terminology and dadgum, we're stickin' with it 🤠.)
+This is an [action for GitHub](https://github.com/features/actions) that does a "roundup"; that is, continuous integration and continuous delivery of [PDS](https://pds.nasa.gov/) software. (Somehow we got started on this "Western" kind of terminology and dadgum, we're stickin' with it 🤠.)
 
 
 ## ℹ️ Using this Action
 
 To use this action in your own workflow, just provide it `with` any of the following parameters:
 
--   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production); defaults to `unstable` or "development" releases; for details about assemblies, see below.
+-   `assembly` — Tells what kind if roundup we're doing, such as `stable` (production) or `integration`; defaults to `unstable` or "development" releases; for details about assemblies, see below.
 -   `packages` — A comma-separated list of extra packages (see "Environment", below) needed to complete your assembly.
 
 For Maven-based roundups *only*, you can also specify these optional `with` parameters:
@@ -18,16 +18,17 @@ For Maven-based roundups *only*, you can also specify these optional `with` para
 -   `maven-stable-artifact-phases` — A comma-separated list of Maven phases for stable artifact publication, defaults to `clean,package,site,deploy`
 -   `maven-unstable-artifact-phases` — A comma-separated list of Maven phases for unstable artifact publication, defaults to `clean,site,deploy`
 
-Depending on the roundup, you may also need the following environment variables:
+You'll also need this environment variable:
 
 -   `ADMIN_GITHUB_TOKEN` — an access token that has administrative permissions in the repository; see below
+
+Depending on the roundup, you may also need the following environment variables:
+
 -   `pypi_username` — Username to use when registering a Python package
 -   `pypi_password` — Password for `pypi_username`
 -   `ossrh_username` — Username to use for uploading a snapshot [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) artifact
 -   `ossrh_password` — Password for `ossrh_username`
 -   `CODE_SIGNING_KEY` — GPG **private** key (base64 encoded) with which to sign artifacts
-
-(Note that `GITHUB_TOKEN` is also used by the Roundup, but it's automatically provided by the GitHub Actions system.)
 
 
 ### 🍃 Environment
@@ -49,9 +50,9 @@ If you install an JDK older than OpenJDK 1.8.0_252, you may need to also set the
 
 ### 👮‍♂️ GitHub Admin Token
 
-The Roundup action must have access to various target repositories. This is afforded by a token, `ADMIN_GITHUB_TOKEN` in the environment. Note that the [NASA-PDS]() organization already has an `ADMIN_GITHUB_TOKEN` set and so any repository within the organization inherits it.
+The Roundup action must have access to various target repositories. This is afforded by a token, `ADMIN_GITHUB_TOKEN` in the environment. Note that the [NASA-PDS](https://github.com/NASA-PDS) organization already has an `ADMIN_GITHUB_TOKEN` in its [collection of secrets](https://github.com/organizations/NASA-PDS/settings/secrets/actions), so any repository within the organization inherits it.
 
-But if you need to override or set up a new token, do the following:
+But if you need to override it or set up a new token, do the following:
 
 1.  Vist your GitHub account's Settings.
 2.  Go to "Developer Settings".
@@ -73,16 +74,18 @@ Save the token (a hex string) and install it in your source repository or organi
 5.  Name the secret, such as `ADMIN_GITHUB_TOKEN`, and insert the token's saved hex string as the value.
 6.  Press "Add secret".
 
-You can now (and should) destroy any saved copies of the token's hex string.
+You can now (and _should_) destroy any saved copies of the token's hex string.
 
 
 ### 🔑 Code Signing Key
 
 Signing code artifacts helps ensure that the code is not just created by who we say created it but that it's unmodified and free from inserted hacks like trojans or viruses. (Of course, it says nothing about the code's _quality_, which may be questionable or could itself _be_ a trojan or virus.) The Roundup uses the code signing key to automatically make these assertions by signing code artifacts it sends to the [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) (in the future, we could also sign Python artifacts sent to the [PyPI](https://pypi.org/)).
 
-**📒 Note:** Whether automatically signing artifacts is a safe practice is left for future discussion.
+The [NASA-PDS](https://github.com/NASA-PDS) organization includes a `CODE_SIGNING_KEY` that all repositories within it inherit.
 
-To set up a code signing key for the Roundup action, first create an OpenPGP-compatible key pair using ``gpg`` or similar tool; for example, with [GnuPG 2.2](https://www.gnupg.org/), run ``gpg --full-generate-key``:
+**📒 Note:** Whether _automatically signing artifacts_ is a safe practice is left for future discussion! 😩
+
+To set up a your own code signing key for the Roundup action, first create an OpenPGP-compatible key pair using ``gpg`` or similar tool; for example, with [GnuPG 2.2](https://www.gnupg.org/), run ``gpg --full-generate-key``:
 
 -   For the kind of key, choose "RSA (sign only)".
 -   For the key length, 1024 bits is fine; 4096 is great.
@@ -105,10 +108,24 @@ This puts the encoded private key onto your pasteboard, ready for pasting into G
 
 There are several different flavors of roundups that you can specify `with` the `assembly` parameter in your workflow. The flavor of assembly tells if you're doing a stable versus an unstable software release and what steps of the roundup to perform. They are as follows:
 
-- `stable` — this is the "standard" PDS assembly for stable software releases. It does the steps of unit testing, integration testing, documentation generation, software building, artifact publication, requirements generation, changelog generation, GitHub releasing, and documentation publication. Because it's a "stable" assembly, it sends all this to production servers; that means non-SNAPSHOT releases to OSSRH for Maven artifacts, the production PyPI for Python artifacts, etc.
-- `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, etc. This is the default if you don't specify an assembly.
-- `integration` — this is the same as the `unstable` PDS assembly, but omits the requirements generation and changelog generation steps.
-- `noop` — this is an assembly that does nothing, i.e., "no operation".
+-   `stable` — this is the "standard" PDS assembly for stable software releases. It does the steps of unit testing, integration testing, documentation generation, software building, artifact publication, requirements generation, changelog generation, GitHub releasing, and documentation publication. Because it's a "stable" assembly, it sends all this to production servers; that means non-SNAPSHOT releases to OSSRH for Maven artifacts, the production PyPI for Python artifacts, etc.
+-   `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, etc. This is the default if you don't specify an assembly.
+-   `integration` — this is the same as the `unstable` PDS assembly, but omits the requirements generation and changelog generation steps.
+-   `noop` — this is an assembly that does nothing, i.e., "no operation".
+
+
+### 🛫 Releases
+
+The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Generic Template Repository](https://github.com/NASA-PDS/pds-template-repo-generic) and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) have the correct GitHub Actions workflows to support this. If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
+
+To make an _official generic software release_ (i.e., a Maven-based Java software release, which for some reason the PDS calls "generic"), simply create a branch with the [semantic version](https://semver.org) number preceded by `v`—such as `v1.2.3`—and push it to GitHub. The Maven release mechanisms will take care of creating the appropriate artifacts and registering them with [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html).
+
+To make an _office Python software release_, you've got a bit more flexibility. Create a branch called `release/VERSION` where VERSION is a full or partial `MAJOR.MINOR` semantic version. The Roundup will use the branch given or compute the next release automatically. For example:
+
+- `release/1.5` — make the next release in the `1.5` lineage; for example, if the last was `v1.5.14` the next will be `v1.5.15`.
+- `release/1.5.15` — make a `v1.5.15` release
+
+The Roundup won't automatically go from `v1.5` to `v1.6`, for example, because such a break in semantic versioning requires thought that a human is mostly better able to do (same goes for `v1` → `v2`).
 
 
 ## 💁‍♀️ Demonstration
@@ -116,26 +133,33 @@ There are several different flavors of roundups that you can specify `with` the 
 The following is a brief example how a workflow that shows how this action can be used:
 
 ```yaml
-name: 📦 CI/CD
+name: 📦 Unstable CI/CD
 
 on:
     push:
       branches:
           - main
-
+        paths-ignore:
+            - 'CHANGELOG.md'
+            - 'docs/requirements/**'
 jobs:
-    roundup:
-        name: 🤠 Roundup
+    unstable-roundup:
+        name: 🤠 Unstable Roundup
         runs-on: ubuntu-latest
+        if: github.actor != 'pdsen-ci'
         steps:
             - 
                 name: 💳 Checking out repository
                 uses: actions/checkout@v2
+                with:
+                    lfs: true
+                    fetch-depth: 0
+                    token: ${{secrets.ADMIN_GITHUB_TOKEN}}
             -
                 name: 🐄 Rounding it up
                 uses: NASA-PDS/roundup-action@main
                 with:
-                    assembly: stable
+                    assembly: unstable
                     packages: cowpoke,chili-sort,lasso
                 env:
                     ADMIN_GITHUB_TOKEN: ${{secrets.pat}}

@@ -4,7 +4,7 @@
 
 from enum import Enum
 from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, BRANCH_RE
-import logging, github3, tempfile, zipfile, os, shutil
+import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
 
@@ -184,19 +184,19 @@ class DocPublicationStep(Step):
         # we assume was made by the earlier ``StepName.githubRelease`` step. It's possible someone
         # could create another release in between these steps! It'd be better if we fetched the
         # release being worked on directly.
-        tmpFileName = None
+        tmpFileName, docDir = None, self.getDocDir()
         try:
             release = repo.releases().next()  # ← here
 
             # Make a ZIP archive of the docs
             fd, tmpFileName = tempfile.mkstemp('.zip')
             with zipfile.ZipFile(os.fdopen(fd, 'wb'), 'w') as zf:
-                for folder, subdirs, filenames in os.walk(self.getDocDir()):
+                for folder, subdirs, filenames in os.walk(docDir):
                     for fn in filenames:
                         path = os.path.join(folder, fn)
                         # Avoid things like Unix-domain sockets if they just happen to appear:
                         if os.path.isfile(path):
-                            zf.write(path, path[len(self.getDocDir()) + 1:])
+                            zf.write(path, path[len(docDir) + 1:])
 
             # Remove any existing ``documentation.zip``
             for asset in release.assets():
@@ -211,11 +211,16 @@ class DocPublicationStep(Step):
             # Per NASA-PDS/roundup-action#28 we also publish the documentation to GitHub pages—but for
             # stable releases only.
             if self.assembly.isStable():
+                # https://github.com/NASA-PDS/roundup-action/issues/49
+                # Warn if there isn't a doc dir but don't fail catastrophically
+                if not os.path.isdir(docDir):
+                    _logger.warning("🧐 The doc dir «%s» doesn't exist, so skipping doc publication", docDir)
+                    return
                 # See https://github.com/X1011/git-directory-deploy for details on ``deploy.sh``
                 # which is now part of the ``github-actions-base``.
                 invoke([
                     'env',
-                    'GIT_DEPLOY_DIR=' + self.getDocDir(),
+                    'GIT_DEPLOY_DIR=' + docDir,
                     'GIT_DEPLOY_BRANCH=gh-pages',
                     'GIT_DEPLOY_REPO=origin',
                     '/usr/local/bin/deploy.sh',

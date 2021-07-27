@@ -42,9 +42,9 @@ def _parseArgs():
     )
 
     parser.add_argument(
-        '-D', '--documentation-dir', default='None',
-        help='📦 Directory where the online documentation is generated, '
-             'default value are /docs/build for python and /target/staging for maven'
+        '-D', '--documentation-dir',
+        help='📄 Directory where the online documentation is generated; '
+             'default values are docs/build for Python and target/staging for Maven'
     )
 
     # Maven 😩
@@ -79,7 +79,16 @@ def main():
     '''Main entrypoint'''
     args = _parseArgs()
     logging.basicConfig(level=args.loglevel)
-    context = Context.create(os.getcwd(), populateEnvVars(os.environ), args)
+    cwd = os.getcwd()
+    context = Context.create(cwd, populateEnvVars(os.environ), args)
+    if context is None:
+        contents = ', '.join(os.listdir(cwd))
+        _logger.critical("💥 No usable context in «%s»; note I can only handle Python and Maven projects so far", cwd)
+        if not contents:
+            _logger.critical('🤷‍♀️ The directory is empty; that might have something to do with it 😝')
+        else:
+            _logger.critical("🔎 Here's what's in that directory: %s", contents)
+        sys.exit(1)
 
     # Bonus package time
     if args.packages:

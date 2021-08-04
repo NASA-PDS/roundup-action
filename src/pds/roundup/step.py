@@ -187,16 +187,25 @@ class DocPublicationStep(Step):
         tmpFileName, docDir = None, self.getDocDir()
         try:
             release = repo.releases().next()  # ← here
+        except StopIteration:
+            _logger.info('🧐 No releases found at all, so I cannot publish documentation assets to them')
+            return
 
+        try:
             # Make a ZIP archive of the docs
             fd, tmpFileName = tempfile.mkstemp('.zip')
+            foundFiles = False
             with zipfile.ZipFile(os.fdopen(fd, 'wb'), 'w') as zf:
                 for folder, subdirs, filenames in os.walk(docDir):
                     for fn in filenames:
                         path = os.path.join(folder, fn)
                         # Avoid things like Unix-domain sockets if they just happen to appear:
                         if os.path.isfile(path):
+                            foundFiles = True
                             zf.write(path, path[len(docDir) + 1:])
+
+            if not foundFiles:
+                _logger.info('🧐 No doc files in %s, so I am not updating the `documentation.zip` asset', docDir)
 
             # Remove any existing ``documentation.zip``
             for asset in release.assets():
@@ -226,9 +235,5 @@ class DocPublicationStep(Step):
                     '/usr/local/bin/deploy.sh',
                     '--allow-empty',
                 ])
-
-        except StopIteration:
-            _logger.info('🧐 No releases found at all, so I cannot publish documentation assets to them')
-            return
         finally:
             if tmpFileName is not None: os.remove(tmpFileName)

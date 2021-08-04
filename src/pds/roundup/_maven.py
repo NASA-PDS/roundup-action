@@ -216,4 +216,4 @@ class _ArtifactPublicationStep(_MavenStep):
 
 class _DocPublicationStep(DocPublicationStep):
 
-    default_documentation_dir = 'target/site'
+    default_documentation_dir = 'target/staging'

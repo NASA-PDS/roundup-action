@@ -220,11 +220,15 @@ class _DocPublicationStep(DocPublicationStep):
 
     def getDocDir(self):
         # Return the user's preference, if given
-        if self.assembly.context.args.documentation_dir:
-            return self.assembly.context.args.documentation_dir
+        userDocs = self.assembly.context.args.documentation_dir
+        if userDocs:
+            _logger.debug('🙋‍♀️ User has specified a doc dir of «%s», so using it', userDocs)
+            return userDocs
 
         # Otherwise, use the staging directory if it exists, otherwise use the site directory
         if os.path.isdir('target/staging'):
+            _logger.debug('🎭 The staging dir exists for docs, so using it')
             return 'target/staging'
         else:
+            _logger.debug('🏗 Defaulting to site dir for docs')
             return 'target/site'

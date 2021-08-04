@@ -217,3 +217,14 @@ class _ArtifactPublicationStep(_MavenStep):
 class _DocPublicationStep(DocPublicationStep):
 
     default_documentation_dir = 'target/staging'
+
+    def getDocDir(self):
+        # Return the user's preference, if given
+        if self.assembly.context.args.documentation_dir:
+            return self.assembly.context.args.documentation_dir
+
+        # Otherwise, use the staging directory if it exists, otherwise use the site directory
+        if os.path.isdir('target/staging'):
+            return 'target/staging'
+        else:
+            return 'target/site'

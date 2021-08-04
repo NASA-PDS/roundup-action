@@ -121,7 +121,7 @@ class _MavenStep(Step):
         '''Invoke Maven, creating a ``settings.xml`` file each time as necessary'''
         self._createSettingsXML()
         self._createKeyring()
-        argv = ['mvn'] + args
+        argv = ['mvn', '--quiet'] + args
         return invoke(argv)
 
 

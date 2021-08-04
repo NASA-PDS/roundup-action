@@ -151,8 +151,6 @@ class _DocsStep(_MavenStep):
 
 class _BuildStep(_MavenStep):
 
-
-
     def execute(self):
         _logger.debug('Maven build step')
         self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
@@ -218,4 +216,4 @@ class _ArtifactPublicationStep(_MavenStep):
 
 class _DocPublicationStep(DocPublicationStep):
 
-    default_documentation_dir = 'target/staging'
+    default_documentation_dir = 'target/site'

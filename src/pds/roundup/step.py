@@ -206,6 +206,7 @@ class DocPublicationStep(Step):
 
             if not foundFiles:
                 _logger.info('🧐 No doc files in %s, so I am not updating the `documentation.zip` asset', docDir)
+                return
 
             # Remove any existing ``documentation.zip``
             for asset in release.assets():

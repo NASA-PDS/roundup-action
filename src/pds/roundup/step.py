@@ -206,6 +206,9 @@ class DocPublicationStep(Step):
 
             if not foundFiles:
                 _logger.info('🧐 No doc files in %s, so I am not updating the `documentation.zip` asset', docDir)
+                if docDir == 'target/staging':
+                    _logger.debug('🙁 Here is what is in target')
+                    invoke(['/bin/ls', '-R', 'target'])
                 return
 
             # Remove any existing ``documentation.zip``

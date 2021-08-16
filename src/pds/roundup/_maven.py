@@ -121,7 +121,7 @@ class _MavenStep(Step):
         '''Invoke Maven, creating a ``settings.xml`` file each time as necessary'''
         self._createSettingsXML()
         self._createKeyring()
-        argv = ['mvn'] + args
+        argv = ['mvn', '--quiet'] + args
         return invoke(argv)
 
 
@@ -150,8 +150,6 @@ class _DocsStep(_MavenStep):
 
 
 class _BuildStep(_MavenStep):
-
-
 
     def execute(self):
         _logger.debug('Maven build step')
@@ -219,3 +217,18 @@ class _ArtifactPublicationStep(_MavenStep):
 class _DocPublicationStep(DocPublicationStep):
 
     default_documentation_dir = 'target/staging'
+
+    def getDocDir(self):
+        # Return the user's preference, if given
+        userDocs = self.assembly.context.args.documentation_dir
+        if userDocs:
+            _logger.debug('🙋‍♀️ User has specified a doc dir of «%s», so using it', userDocs)
+            return userDocs
+
+        # Otherwise, use the staging directory if it exists, otherwise use the site directory
+        if os.path.isdir('target/staging'):
+            _logger.debug('🎭 The staging dir exists for docs, so using it')
+            return 'target/staging'
+        else:
+            _logger.debug('🏗 Defaulting to site dir for docs')
+            return 'target/site'

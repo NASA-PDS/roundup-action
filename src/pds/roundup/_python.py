@@ -79,12 +79,13 @@ class _BuildStep(_PythonStep):
             # a compliant version string and so we can shoehorn Maven-style "SNAPSHOT" releases
             # into the Test PyPi—something for which I'm not sure it was even intended 😒
             candidate = invokeGIT(['describe', '--always', '--tags'])
+            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
             match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
             if match is None:
-                _logger.info("🤷‍♀️ No 'v1.2.3' style tags in this repo so skipping unstable build")
-                return
-            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            tag = match.group(1) + '-dev-' + slate
+                _logger.info("🐣 No 'v1.2.3' style tags in this repo so assuming we start with 0.0.0; happy birthday!")
+                tag = 'v0.0.0-dev-' + slate
+            else:
+                tag = match.group(1) + '-dev-' + slate
             git_config()
             try:
                 invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])

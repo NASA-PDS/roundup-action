@@ -161,11 +161,9 @@ class _GitHubReleaseStep(_PythonStep):
         self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-            # NASA-PDS/roundup-action#25; although ``python-release`` and ``python-snapshot-release`` are
-            # the same script, they must examine argv[0] to change their behavior.
             invoke(['python-release', '--token', token])
         else:
-            invoke(['python-snapshot-release', '--token', token])
+            invoke(['python-release', '--snapshot', '--token', token])
 
 
 class _ArtifactPublicationStep(_PythonStep):

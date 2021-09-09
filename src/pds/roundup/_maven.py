@@ -192,11 +192,9 @@ class _GitHubReleaseStep(_MavenStep):
         # create new dev tag if build is successful
         if not self.assembly.isStable():
             self._create_dev_tag()
-            # NASA-PDS/roundup-action#25; although ``maven-release`` and ``maven-snapshot-release`` are
-            # the same script, they must examine argv[0] to change their behavior.
             invoke(['maven-release', '--token', token])
         else:
-            invoke(['maven-snapshot-release', '--token', token])
+            invoke(['maven-release', '--snapshot', '--token', token])
 
 
 class _ArtifactPublicationStep(_MavenStep):

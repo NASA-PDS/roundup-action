@@ -116,8 +116,8 @@ class _GitHubReleaseStep(_PythonStep):
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
             invokeGIT(['fetch', '--prune', '--tags'])
 
-        # Next, find all the tags with "dev" in their name and delete them:
-        tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
+        # Next, find all the tags with SNAPSHOT in their name and delete them
+        tags = invokeGIT(['tag', '--list', '*SNAPSHOT*']).split('\n')
         for tag in tags:
             tag = tag.strip()
             if not tag: continue

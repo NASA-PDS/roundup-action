@@ -83,9 +83,9 @@ class _BuildStep(_PythonStep):
             match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
             if match is None:
                 _logger.info("🐣 No 'v1.2.3' style tags in this repo so assuming we start with 0.0.0; happy birthday!")
-                tag = 'v0.0.0-dev-' + slate
+                tag = 'v0.0.0-SNAPSHOT-' + slate
             else:
-                tag = match.group(1) + '-dev-' + slate
+                tag = match.group(1) + '-SNAPSHOT-' + slate
             git_config()
             try:
                 invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])

@@ -120,7 +120,7 @@ The Roundup includes built-in support to make official releases of software, pub
 
 To make an _official generic software release_ (i.e., a Maven-based Java software release, which for some reason the PDS calls "generic"), simply create a branch with the [semantic version](https://semver.org) number preceded by `v`—such as `v1.2.3`—and push it to GitHub. The Maven release mechanisms will take care of creating the appropriate artifacts and registering them with [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html).
 
-To make an _office Python software release_, you've got a bit more flexibility. Create a branch called `release/VERSION` where VERSION is a full or partial `MAJOR.MINOR` semantic version. The Roundup will use the branch given or compute the next release automatically. For example:
+To make an _official Python software release_, you've got a bit more flexibility. Create a branch called `release/VERSION` where VERSION is a full or partial `MAJOR.MINOR` semantic version. The Roundup will use the branch given or compute the next release automatically. For example:
 
 - `release/1.5` — make the next release in the `1.5` lineage; for example, if the last was `v1.5.14` the next will be `v1.5.15`.
 - `release/1.5.15` — make a `v1.5.15` release

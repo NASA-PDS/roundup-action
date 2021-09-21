@@ -52,9 +52,13 @@ class _UnitTestStep(_PythonStep):
     '''A step to take with Python unit'''
     def execute(self):
         _logger.debug('Python unit test step')
-        # Since we're already in Python we could test directly, but the execution environment might
-        # have set up a special ``python`` executable that has extra features needed for testing.
-        invoke(['python', 'setup.py', 'test'])
+        try:
+            _logger.debug('Trying the new way: installing the dev extra using ``pip`` and then running ``tox``')
+            invoke(['pip', 'install', '--editable', '.[dev]'])
+            invoke(['tox'])
+        except (InvokedProcessError, FileNotFoundError):
+            _logger.debug("OK, the new way didn't work, trying the old way")
+            invoke(['python', 'setup.py', 'test'])
 
 
 class _IntegrationTestStep(_PythonStep):

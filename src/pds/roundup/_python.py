@@ -87,9 +87,9 @@ class _BuildStep(_PythonStep):
             match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
             if match is None:
                 _logger.info("🐣 No 'v1.2.3' style tags in this repo so assuming we start with 0.0.0; happy birthday!")
-                tag = 'v0.0.0-SNAPSHOT-' + slate
+                tag = 'v0.0.0-dev-' + slate
             else:
-                tag = match.group(1) + '-SNAPSHOT-' + slate
+                tag = match.group(1) + '-dev-' + slate
             git_config()
             try:
                 invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
@@ -120,8 +120,8 @@ class _GitHubReleaseStep(_PythonStep):
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
             invokeGIT(['fetch', '--prune', '--tags'])
 
-        # Next, find all the tags with SNAPSHOT in their name and delete them
-        tags = invokeGIT(['tag', '--list', '*SNAPSHOT*']).split('\n')
+        # Next, find all the tags with dev in their name and delete them
+        tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
         for tag in tags:
             tag = tag.strip()
             if not tag: continue

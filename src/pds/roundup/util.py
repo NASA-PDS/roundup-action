@@ -35,7 +35,7 @@ def populateEnvVars(env):
     copy['ossrh_password'] = ossrh_password
     copy['JAVA_HOME']      = java_home
 
-    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):  # 🤔 TODO: is GITHUB_TOKEN really used?
+    for var in ('GITHUB_REPOSITORY',):  # List other important vars here
         if var not in env:
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 

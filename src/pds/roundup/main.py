@@ -7,17 +7,19 @@
 from .context import Context
 from .errors import InvokedProcessError
 from .util import populateEnvVars, invoke
-from .assembly import StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly
-
+from .assembly import (
+    StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly, EnvironmentalAssembly
+)
 import os, logging, argparse, sys
 
 _logger = logging.getLogger(__name__)
 
 _assemblies = {
-    'stable': StablePDSAssembly,
-    'unstable': UnstablePDSAssembly,
+    'env':         EnvironmentalAssembly,
     'integration': IntegrativePDSAssembly,
-    'noop': NoOpAssembly,
+    'noop':        NoOpAssembly,
+    'stable':      StablePDSAssembly,
+    'unstable':    UnstablePDSAssembly,
 }
 _defaultAssembly = 'unstable'
 

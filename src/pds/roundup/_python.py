@@ -4,10 +4,10 @@
 
 from .context import Context
 from .errors import MissingEnvVarError
-from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
+from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep, CleanupStep
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config
 from .errors import InvokedProcessError
-import logging, os, datetime, re
+import logging, os, datetime, re, shutil
 
 _logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ class PythonContext(Context):
     def __init__(self, cwd, environ, args):
         self.steps = {
             StepName.null:                NullStep,
+            StepName.preparation:         _PreparationStep,
             StepName.unitTest:            _UnitTestStep,
             StepName.integrationTest:     _IntegrationTestStep,
             StepName.changeLog:           ChangeLogStep,
@@ -26,6 +27,7 @@ class PythonContext(Context):
             StepName.githubRelease:       _GitHubReleaseStep,
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
+            StepName.cleanup:             CleanupStep,
         }
         super(PythonContext, self).__init__(cwd, environ, args)
 
@@ -40,12 +42,31 @@ class _PythonStep(Step):
         return 'https://upload.pypi.org/legacy/' if self.assembly.isStable() else 'https://test.pypi.org/legacy/'
 
     def getCheeseshopCredentials(self):
-        '''Get the username and password (as a tuple) to use to log into the PyPI'''
+        '''Get the username and password (as a tuple) to use to log into the PyPI.
+
+        ☑️ TODO: Use an API token instead of a username and password.
+        '''
         env = self.assembly.context.environ
         username, password = env.get('pypi_username'), env.get('pypi_password')
         if not username: raise MissingEnvVarError('pypi_username')
         if not password: raise MissingEnvVarError('pypi_password')
         return username, password
+
+
+class _PreparationStep(_PythonStep):
+    '''Prepare the python repository for action.'''
+    def execute(self):
+        _logger.debug('Python preparation step')
+        shutil.rmtree('venv', ignore_errors=True)
+        invoke(['python', '-m', 'venv', 'venv'])
+        # Do the pseudo-equivalent of ``activate``:
+        venvBin = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin'))
+        os.environ['PATH'] = f'{venvBin}:{os.environ["PATH"]}'
+        # Make sure we have the latest of pip+setuptools+wheel
+        invoke(['pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
+        # Now install the package being rounded up
+        invoke(['pip', 'install', '--editable', '.[dev]'])
+        # ☑️ TODO: what other prep steps are there? What about VERSION.txt overwriting?
 
 
 class _UnitTestStep(_PythonStep):
@@ -54,7 +75,6 @@ class _UnitTestStep(_PythonStep):
         _logger.debug('Python unit test step')
         try:
             _logger.debug('Trying the new way: installing the dev extra using ``pip`` and then running ``tox``')
-            invoke(['pip', 'install', '--editable', '.[dev]'])
             invoke(['tox'])
         except (InvokedProcessError, FileNotFoundError):
             _logger.debug("OK, the new way didn't work, trying the old way")

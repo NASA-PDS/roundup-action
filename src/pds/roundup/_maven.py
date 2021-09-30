@@ -4,7 +4,9 @@
 
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError
-from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
+from .step import (
+    Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep, PreparationStep, CleanupStep
+)
 from .util import invoke, invokeGIT
 from lxml import etree
 import logging, os, base64, subprocess
@@ -22,6 +24,7 @@ class MavenContext(Context):
     def __init__(self, cwd, environ, args):
         self.steps = {
             StepName.null:                NullStep,
+            StepName.preparation:         PreparationStep,
             StepName.unitTest:            _UnitTestStep,
             StepName.integrationTest:     _IntegrationTestStep,
             StepName.changeLog:           ChangeLogStep,
@@ -31,6 +34,7 @@ class MavenContext(Context):
             StepName.githubRelease:       _GitHubReleaseStep,
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.docPublication:      _DocPublicationStep,
+            StepName.cleanup:             CleanupStep,
         }
         super(MavenContext, self).__init__(cwd, environ, args)
 

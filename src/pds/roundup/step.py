@@ -37,6 +37,7 @@ class Step(object):
 class StepName(Enum):
     '''Enumerated identifiers for each of the possible steps of a roundup'''
     null                = 'null'
+    preparation         = 'preparation'
     unitTest            = 'unitTest'
     integrationTest     = 'integrationTest'
     changeLog           = 'changeLog'
@@ -46,6 +47,7 @@ class StepName(Enum):
     githubRelease       = 'githubRelease'
     artifactPublication = 'artifactPublication'
     docPublication      = 'docPublication'
+    cleanup             = 'cleanup'
 
 
 # Common Steps
@@ -63,6 +65,18 @@ class NullStep(Step):
         # import pdb;pdb.set_trace()
         # import subprocess
         # subprocess.run('/bin/sh')
+
+
+class PreparationStep(Step):
+    '''Prepare the repository for the roundup.'''
+    def execute(self):
+        import pdb;pdb.set_trace()
+
+
+class CleanupStep(Step):
+    '''Clean up and/or perform any final roundup steps after all is said and done.'''
+    def execute(self):
+        pass
 
 
 class ChangeLogStep(Step):

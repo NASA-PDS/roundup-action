@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config, commit
 from .errors import InvokedProcessError
 import logging, os, datetime, re
 
@@ -22,6 +22,7 @@ class PythonContext(Context):
             StepName.changeLog:           ChangeLogStep,
             StepName.requirements:        RequirementsStep,
             StepName.docs:                _DocsStep,
+            StepName.versionBump:         _BumpVersionFileStep,
             StepName.build:               _BuildStep,
             StepName.githubRelease:       _GitHubReleaseStep,
             StepName.artifactPublication: _ArtifactPublicationStep,
@@ -73,6 +74,46 @@ class _DocsStep(_PythonStep):
     '''A step that uses Sphinx to generate documentation'''
     def execute(self):
         invoke(['sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
+
+
+class _BumpVersionFileStep(_PythonStep):
+    ''''''
+    def execute(self):
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version bump for unstable build')
+            return
+
+        branch = invokeGIT(['branch', '--show-current']).strip()
+
+        if not branch:
+            _logger.debug('🕊 Cannot determine what branch we are on, version bump failed')
+            raise InvokedProcessError
+
+        match = BRANCH_RE.match(branch)
+        if not match:
+            _logger.debug('🐎 Stable push to branch «%s» but not a ``release/`` branch, version bump failed', branch)
+            raise InvokedProcessError
+
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        if micro is None:
+            _logger.debug('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+            raise InvokedProcessError
+
+        _logger.debug("Locating VERSION.txt to update with new release version.")
+        for dirpath, dirnames, filenames in os.walk(self.workspace):
+            for fn in filenames:
+                if fn.lower() == 'version.txt':
+                    versionFile = os.path.join(dirpath, fn)
+                    _logger.debug('🪄 Found a version.txt in %s', versionFile)
+                    with open(versionFile, 'w') as inp:
+                        inp.write(f'{major}.{minor}.{micro}')
+                        break
+        else:
+            _logger.debug('Unable to locate VERSION.txt in repo. Version bump failed.')
+            raise InvokedProcessError
+
+        commit(versionFile, f'Bumping version for {major}.{minor}.{micro} release')
 
 
 class _BuildStep(_PythonStep):

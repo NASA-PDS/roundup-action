@@ -46,6 +46,7 @@ class StepName(Enum):
     githubRelease       = 'githubRelease'
     artifactPublication = 'artifactPublication'
     docPublication      = 'docPublication'
+    versionBump         = 'versionBump'
 
 
 # Common Steps

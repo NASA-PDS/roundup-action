@@ -48,6 +48,7 @@ class StepName(Enum):
     artifactPublication = 'artifactPublication'
     docPublication      = 'docPublication'
     cleanup             = 'cleanup'
+    versionBump         = 'versionBump'
 
 
 # Common Steps

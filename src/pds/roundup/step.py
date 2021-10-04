@@ -70,7 +70,7 @@ class NullStep(Step):
 class PreparationStep(Step):
     '''Prepare the repository for the roundup.'''
     def execute(self):
-        import pdb;pdb.set_trace()
+        pass
 
 
 class CleanupStep(Step):

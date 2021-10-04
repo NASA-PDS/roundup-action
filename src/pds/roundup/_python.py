@@ -74,7 +74,7 @@ class _UnitTestStep(_PythonStep):
     def execute(self):
         _logger.debug('Python unit test step')
         try:
-            _logger.debug('Trying the new way: installing the dev extra using ``pip`` and then running ``tox``')
+            _logger.debug('Trying the new way: ``tox``')
             invoke(['tox'])
         except (InvokedProcessError, FileNotFoundError):
             _logger.debug("OK, the new way didn't work, trying the old way")

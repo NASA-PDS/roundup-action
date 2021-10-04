@@ -23,18 +23,18 @@ class MavenContext(Context):
     '''A Maven context supports Maven (Java) software proejcts'''
     def __init__(self, cwd, environ, args):
         self.steps = {
+            StepName.artifactPublication: _ArtifactPublicationStep,
+            StepName.build:               _BuildStep,
+            StepName.changeLog:           ChangeLogStep,
+            StepName.cleanup:             CleanupStep,
+            StepName.docPublication:      _DocPublicationStep,
+            StepName.docs:                _DocsStep,
+            StepName.githubRelease:       _GitHubReleaseStep,
+            StepName.integrationTest:     _IntegrationTestStep,
             StepName.null:                NullStep,
             StepName.preparation:         PreparationStep,
-            StepName.unitTest:            _UnitTestStep,
-            StepName.integrationTest:     _IntegrationTestStep,
-            StepName.changeLog:           ChangeLogStep,
             StepName.requirements:        RequirementsStep,
-            StepName.docs:                _DocsStep,
-            StepName.build:               _BuildStep,
-            StepName.githubRelease:       _GitHubReleaseStep,
-            StepName.artifactPublication: _ArtifactPublicationStep,
-            StepName.docPublication:      _DocPublicationStep,
-            StepName.cleanup:             CleanupStep,
+            StepName.unitTest:            _UnitTestStep,
         }
         super(MavenContext, self).__init__(cwd, environ, args)
 

@@ -16,19 +16,19 @@ class PythonContext(Context):
     '''A Python context supports Python software proejcts'''
     def __init__(self, cwd, environ, args):
         self.steps = {
+            StepName.artifactPublication: _ArtifactPublicationStep,
+            StepName.build:               _BuildStep,
+            StepName.changeLog:           ChangeLogStep,
+            StepName.cleanup:             CleanupStep,
+            StepName.docPublication:      _DocPublicationStep,
+            StepName.docs:                _DocsStep,
+            StepName.githubRelease:       _GitHubReleaseStep,
+            StepName.integrationTest:     _IntegrationTestStep,
             StepName.null:                NullStep,
             StepName.preparation:         _PreparationStep,
-            StepName.unitTest:            _UnitTestStep,
-            StepName.integrationTest:     _IntegrationTestStep,
-            StepName.changeLog:           ChangeLogStep,
             StepName.requirements:        RequirementsStep,
-            StepName.docs:                _DocsStep,
+            StepName.unitTest:            _UnitTestStep,
             StepName.versionBump:         _BumpVersionFileStep,
-            StepName.build:               _BuildStep,
-            StepName.githubRelease:       _GitHubReleaseStep,
-            StepName.artifactPublication: _ArtifactPublicationStep,
-            StepName.docPublication:      _DocPublicationStep,
-            StepName.cleanup:             CleanupStep,
         }
         super(PythonContext, self).__init__(cwd, environ, args)
 

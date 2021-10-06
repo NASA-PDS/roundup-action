@@ -106,7 +106,7 @@ class _PreparationStep(Step):
         root.append(profiles)
         profile = etree.Element(prefix + 'profile')
         profiles.append(profile)
-        etree.SubElement(profile, prefix + 'id').text = 'ossrh'
+        etree.SubElement(profile, prefix + 'id').text = 'release'  # The PDS Maven Parent POM calls it ``release``
         activation = etree.Element(prefix + 'activation')
         profile.append(activation)
         etree.SubElement(activation, prefix + 'activeByDefault').text = 'true'
@@ -212,7 +212,7 @@ class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         if self.assembly.isStable():
             try:
-                args = ['--activate-profiles', 'ossrh']
+                args = ['--activate-profiles', 'release']  # The PDS Maven Parent POM calls it ``release``
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)
             except InvokedProcessError as ipe:

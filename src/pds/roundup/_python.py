@@ -125,8 +125,7 @@ class _BumpVersionFileStep(_PythonStep):
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
         for dirpath, dirnames, filenames in os.walk(self.assembly.context.cwd):
-            if self._prune.match(dirpath): continue
-            import pdb;pdb.set_trace()
+            if self._prune.search(dirpath): continue
             for fn in filenames:
                 if fn.lower() == 'version.txt':
                     versionFile = os.path.join(dirpath, fn)

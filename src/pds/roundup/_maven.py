@@ -7,7 +7,7 @@ from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
 from .util import invoke, invokeGIT, BRANCH_RE, commit
 from lxml import etree
-import logging, os, base64, subprocess
+import logging, os, base64, subprocess, re
 
 _logger = logging.getLogger(__name__)
 
@@ -271,5 +271,19 @@ class _CleanupStep(_MavenStep):
     '''Step that tidies up.'''
     def execute(self):
         _logger.debug('Maven cleanup step')
-        # Notning else at the moment, however I feel we may need to add
-        # back the SNAPSHOT to the version ID in stable releases
+        if not self.assembly.isStable():
+            _logger.debug('Skipping cleanup for unstable build')
+            return
+        pomVersion = self.getVersionFromPOM()
+        match = re.match(r'(\d+)\.(\d+)\.(\d+)', pomVersion)
+        if not match:
+            raise RoundupError(f'Expected Major.Minor.Micro version in pom but got «{pomVersion}»')
+        major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
+        _logger.debug('🔖 Setting version %d.%d.%d-SNAPSHOT in the pom', major, minor, micro)
+        self.invokeMaven([
+            '-DgenerateBackupPoms=false',
+            '-DremoveSnapshot=false',
+            f'-DnewVersion={major}.{minor}.{micro}-SNAPSHOT',
+            'versions:set'
+        ])
+        commit('pom.xml', f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')

@@ -15,6 +15,12 @@
 # cd ../some-package-i-want-to-roundup
 # run-roundup.sh unstable preparation,unitTest
 #
+# If you don't give any steps (like `preparation,unitTest`) you get a default
+# set. HOWEVER, only skip steps if you know what you're doing! For example, in
+# Python repositories, the `preparation`` step sets the PATH to include the
+# venv against which the project's being roudned up. Skip that and later steps
+# which rely on that environment may fail.
+#
 # Note: you'll need a ~/.secrets/github-roundup.token containing a GitHub API
 # token with the scopes repo:status, repo_deployment, and public_repo. You'll
 # also need a ~/.secrets/roundup.sh file with Bourne shell statements that
@@ -25,9 +31,24 @@
 # export ossrh_username=USERNAME
 # export ossrh_password=PASSWORD
 #
+# You'll also need these on your PATH:
+#
+# gem install --silent github_changelog_generator --version 1.16.4
+# pip install --quiet sphinx==3.2.1 sphinx-argparse==0.2.5 sphinx-rtd-theme==0.5.0 twine==3.4.2
+#
+# i.e., the executables `github_changelog_generator` and `sphinx-build`
+# with `sphinx_rtd_theme` enabled.
+#
+# You'll also need the `deploy.sh` script:
+#
+# curl --location 'https://github.com/X1011/git-directory-deploy/raw/master/deploy.sh' > $HOME/bin/deploy.sh
+# chmod 755 $HOME/bin/deploy.sh
+#
+# Then add `~/bin` to your PATH.
+
 
 # Constantly
-defaultSteps="preparation,unitTest,integrationTest,changeLog,requirements,docs,build,githubRelease,artifactPublication,docPublication,cleanup"
+defaultSteps="preparation,unitTest,integrationTest,changeLog,requirements,docs,versionBump,build,githubRelease,artifactPublication,docPublication,cleanup"
 
 # Check args
 if [ "$#" -lt 1 -o "$#" -gt 2 ]; then
@@ -62,11 +83,12 @@ fi
 
 # Set additional env vars
 [ "$1" == "stable" ] && stable=true || stable=false
+export ADMIN_GITHUB_TOKEN=`cat ${HOME}/.secrets/github-roundup.token`
+export GITHUB_TOKEN=$ADMIN_GITHUB_TOKEN
 export ROUNDUP_STABLE="$stable"
 export ROUNDUP_STEPS=${2:-$defaultSteps}
 export GITHUB_REPOSITORY=nasa-pds-engineering-node/epitome
 export GITHUB_WORKSPACE=${PWD}
-export GITHUB_TOKEN=`cat ${HOME}/.secrets/github-roundup.token`
 export GITHUB_ACTIONS=true
 export CI=true
 

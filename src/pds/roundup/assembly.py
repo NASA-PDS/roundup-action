@@ -65,6 +65,7 @@ class PDSAssembly(Assembly):
         StepName.unitTest,
         StepName.integrationTest,
         StepName.docs,
+        StepName.versionBump,
         StepName.build,
         StepName.artifactPublication,
         # NASA-PDS/roundup-action#29: generate the requirements before tagging the release

@@ -108,8 +108,10 @@ class _PreparationStep(Step):
         profiles.append(profile)
         etree.SubElement(profile, prefix + 'id').text = 'ossrh'
         activation = etree.Element(prefix + 'activation')
+        profile.append(activation)
         etree.SubElement(activation, prefix + 'activeByDefault').text = 'true'
         properties = etree.Element(prefix + 'properties')
+        activation.append(properties)
         etree.SubElement(properties, prefix + 'gpg.executable').text = '/usr/bin/gpg'
         etree.SubElement(properties, prefix + 'gpg.useagent').text = 'false'
 
@@ -210,7 +212,7 @@ class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         if self.assembly.isStable():
             try:
-                args = ['--activate-profiles', 'release']
+                args = ['--activate-profiles', 'ossrh']
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)
             except InvokedProcessError as ipe:

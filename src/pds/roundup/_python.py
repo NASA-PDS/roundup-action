@@ -28,7 +28,7 @@ class PythonContext(Context):
             StepName.preparation:         _PreparationStep,
             StepName.requirements:        RequirementsStep,
             StepName.unitTest:            _UnitTestStep,
-            StepName.versionBump:         _BumpVersionFileStep,
+            StepName.versionBump:         _VersionBumpingStep,
         }
         super(PythonContext, self).__init__(cwd, environ, args)
 
@@ -96,7 +96,7 @@ class _DocsStep(_PythonStep):
         invoke(['sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
 
 
-class _BumpVersionFileStep(_PythonStep):
+class _VersionBumpingStep(_PythonStep):
     ''''''
     # Filter out directory paths with these in them when trying to find VERSION.txt
     #

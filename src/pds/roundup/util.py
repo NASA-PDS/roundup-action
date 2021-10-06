@@ -105,6 +105,8 @@ def git_pull():
 def commit(filename, message):
     '''Commit the file named ``filename`` to the local Git repository with the given ``message``.
     '''
+    _logger.debug('🥼 Committing file %s with message «%s»', filename, message)
+    git_config()
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work

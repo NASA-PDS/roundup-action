@@ -2,22 +2,18 @@
    "folders" : [
       {
          "file_exclude_patterns" : [
-            ".*.cfg",
-            "bootstrap.py",
-            "doc.txt",
             "*.sublime-*",
-            "*.py[cod]"
+            "*.py[cod]",
+            ".DS_Store"
          ],
          "folder_exclude_patterns" : [
             ".idle",
             "bin",
-            "develop-eggs",
             "dist",
             "build",
             "*.egg-info",
-            "parts",
-            "var",
-            "__pycache__"
+            "__pycache__",
+            "venv"
          ],
          "path" : "."
       }

@@ -118,7 +118,7 @@ class _BumpVersionFileStep(_PythonStep):
             raise InvokedProcessError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
-        for dirpath, dirnames, filenames in os.walk(self.workspace):
+        for dirpath, dirnames, filenames in os.walk(self.assembly.context.cwd):
             for fn in filenames:
                 if fn.lower() == 'version.txt':
                     versionFile = os.path.join(dirpath, fn)

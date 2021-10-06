@@ -6,7 +6,7 @@ from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep, CleanupStep
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config, commit
-from .errors import InvokedProcessError
+from .errors import InvokedProcessError, RoundupError
 import logging, os, datetime, re, shutil
 
 _logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ class _BumpVersionFileStep(_PythonStep):
     #
     # We could constrain our search to ``src`` but some older PDS repositories—including our own
     # ``pds-github-util``—don't use ``src`` 😩
-    _prune = re.compile(r'/(venv|\.tox|dist)|__pycache__')
+    _prune = re.compile(r'/(venv|\.tox|dist|build)|__pycache__')
 
     def execute(self):
         if not self.assembly.isStable():
@@ -112,20 +112,22 @@ class _BumpVersionFileStep(_PythonStep):
         branch = invokeGIT(['branch', '--show-current']).strip()
 
         if not branch:
-            raise InvokedProcessError('🕊 Cannot determine what branch we are on, version bump failed')
+            raise RoundupError('🕊 Cannot determine what branch we are on, version bump failed')
 
         match = BRANCH_RE.match(branch)
         if not match:
-            raise InvokedProcessError(f'🐎 Stable push to branch «{branch}» but not a ``release/`` branch')
+            raise RoundupError(f'🐎 Stable push to branch «{branch}» but not a ``release/`` branch')
 
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
-            raise InvokedProcessError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+            raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
+        versionFile = None
         for dirpath, dirnames, filenames in os.walk(self.assembly.context.cwd):
             if self._prune.search(dirpath): continue
+            if versionFile is not None: break
             for fn in filenames:
                 if fn.lower() == 'version.txt':
                     versionFile = os.path.join(dirpath, fn)
@@ -133,8 +135,8 @@ class _BumpVersionFileStep(_PythonStep):
                     with open(versionFile, 'w') as inp:
                         inp.write(f'{major}.{minor}.{micro}\n')
                         break
-        else:
-            raise InvokedProcessError('Unable to locate VERSION.txt in repo. Version bump failed.')
+        if versionFile is None:
+            raise RoundupError('Unable to locate VERSION.txt in repo. Version bump failed.')
 
         commit(versionFile, f'Bumping version for {major}.{minor}.{micro} release')
 

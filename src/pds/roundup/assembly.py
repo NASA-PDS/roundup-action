@@ -38,7 +38,7 @@ class Assembly(object):
                 _logger.info('For context %r no step was available for %s; ignoring this step', self.context, stepName)
         _logger.debug('Executing roundup')
         for step in steps:
-            _logger.info("🏃‍♀️▁▂▃▄▅▆▆▇▇██💨 EXECUTING step %s", step.__class__.__name__)
+            _logger.info("🏎▁▂▃▄▅▆▆▇▇██💨 EXECUTING step %s", step.__class__.__name__)
             step.execute()
 
     def isStable(self):

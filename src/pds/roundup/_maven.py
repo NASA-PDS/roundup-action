@@ -3,11 +3,9 @@
 '''🤠 PDS Roundup: Maven context'''
 
 from .context import Context
-from .errors import InvokedProcessError, MissingEnvVarError
-from .step import (
-    Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep, PreparationStep, CleanupStep
-)
-from .util import invoke, invokeGIT
+from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
+from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
+from .util import invoke, invokeGIT, BRANCH_RE, commit
 from lxml import etree
 import logging, os, base64, subprocess
 
@@ -26,15 +24,16 @@ class MavenContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.build:               _BuildStep,
             StepName.changeLog:           ChangeLogStep,
-            StepName.cleanup:             CleanupStep,
+            StepName.cleanup:             _CleanupStep,
             StepName.docPublication:      _DocPublicationStep,
             StepName.docs:                _DocsStep,
             StepName.githubRelease:       _GitHubReleaseStep,
             StepName.integrationTest:     _IntegrationTestStep,
             StepName.null:                NullStep,
-            StepName.preparation:         PreparationStep,
+            StepName.preparation:         _PreparationStep,
             StepName.requirements:        RequirementsStep,
             StepName.unitTest:            _UnitTestStep,
+            StepName.versionBump:         _VersionBumpingStep,
         }
         super(MavenContext, self).__init__(cwd, environ, args)
 
@@ -58,8 +57,16 @@ class _MavenStep(Step):
                 '☡ More than one ``<version>`` found in %s; using the first one, but your POM is bad',
                 pomFile
             )
-        return versions[0].text.strip()
 
+        return versions[0].text.strip()
+    def invokeMaven(self, args):
+        '''Invoke Maven with the given ``args``.'''
+        argv = ['mvn', '--quiet'] + args
+        return invoke(argv)
+
+
+class _PreparationStep(Step):
+    '''Step that prepares for future steps by setting up Maven and code signing.'''
     def _createSettingsXML(self):
         '''Create a Maven-compatible ``settings.xml`` file for future use by
         ``Step``s created by this context.
@@ -121,12 +128,10 @@ class _MavenStep(Step):
         if not key: raise MissingEnvVarError(keyVarName)
         subprocess.run(['gpg', '--batch', '--yes', '--import'], input=base64.b64decode(key), check=True)
 
-    def invokeMaven(self, args):
-        '''Invoke Maven, creating a ``settings.xml`` file each time as necessary'''
+    def execute(self):
+        _logger.debug('Maven preparation step')
         self._createSettingsXML()
         self._createKeyring()
-        argv = ['mvn', '--quiet'] + args
-        return invoke(argv)
 
 
 class _UnitTestStep(_MavenStep):
@@ -154,14 +159,14 @@ class _DocsStep(_MavenStep):
 
 
 class _BuildStep(_MavenStep):
-
+    '''Maven build step.'''
     def execute(self):
         _logger.debug('Maven build step')
         self.invokeMaven(self.assembly.context.args.maven_build_phases.split(','))
 
 
 class _GitHubReleaseStep(_MavenStep):
-
+    '''Maven GitHub release step.'''
     def _create_dev_tag(self):
         try:
             invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
@@ -203,7 +208,6 @@ class _GitHubReleaseStep(_MavenStep):
 
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
-
         if self.assembly.isStable():
             try:
                 args = ['--activate-profiles', 'release']
@@ -234,3 +238,38 @@ class _DocPublicationStep(DocPublicationStep):
         else:
             _logger.debug('🏗 Defaulting to site dir for docs')
             return 'target/site'
+
+
+class _VersionBumpingStep(_MavenStep):
+    '''Step that sets a version number as needed.'''
+    def execute(self):
+        '''Set the version number.'''
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version bump for unstable build')
+            return
+
+        branch = invokeGIT(['branch', '--show-current']).strip()
+        if not branch:
+            raise RoundupError('🕊 Cannot determine what branch we are on so version bump fail')
+        match = BRANCH_RE.match(branch)
+        if not match:
+            raise RoundupError(f'🐎 Stable workflow on «{branch}» but not a ``release/`` branch!')
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        if micro is None:
+            raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+        self.invokeMaven([
+            '-DgenerateBackupPoms=false',
+            '-DremoveSnapshot=true',
+            f'-DnewVersion={major}.{minor}.{micro}',
+            'versions:set'
+        ])
+        commit('pom.xml', f'Bumping version for {major}.{minor}.{micro} release')
+
+
+class _CleanupStep(_MavenStep):
+    '''Step that tidies up.'''
+    def execute(self):
+        _logger.debug('Maven cleanup step')
+        # Notning else at the moment, however I feel we may need to add
+        # back the SNAPSHOT to the version ID in stable releases

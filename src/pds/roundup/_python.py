@@ -98,6 +98,12 @@ class _DocsStep(_PythonStep):
 
 class _BumpVersionFileStep(_PythonStep):
     ''''''
+    # Filter out directory paths with these in them when trying to find VERSION.txt
+    #
+    # We could constrain our search to ``src`` but some older PDS repositories—including our own
+    # ``pds-github-util``—don't use ``src`` 😩
+    _prune = re.compile(r'/(venv|\.tox|dist)|__pycache__')
+
     def execute(self):
         if not self.assembly.isStable():
             _logger.debug('Skipping version bump for unstable build')
@@ -119,6 +125,8 @@ class _BumpVersionFileStep(_PythonStep):
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
         for dirpath, dirnames, filenames in os.walk(self.assembly.context.cwd):
+            if self._prune.match(dirpath): continue
+            import pdb;pdb.set_trace()
             for fn in filenames:
                 if fn.lower() == 'version.txt':
                     versionFile = os.path.join(dirpath, fn)

@@ -271,7 +271,7 @@ class _VersionBumpingStep(_MavenStep):
         if micro is None:
             raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
         invoke([
-            'maven',
+            'mvn',
             '-DgenerateBackupPoms=false',
             '-DremoveSnapshot=true',
             f'-DnewVersion={major}.{minor}.{micro}',

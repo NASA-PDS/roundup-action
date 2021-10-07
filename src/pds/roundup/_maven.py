@@ -62,8 +62,7 @@ class _MavenStep(Step):
         return versions[0].text.strip()
     def invokeMaven(self, args):
         '''Invoke Maven with the given ``args``.'''
-        # argv = ['mvn', '--quiet'] + args
-        argv = ['mvn'] + args
+        argv = ['mvn', '--quiet'] + args
         return invoke(argv)
 
 
@@ -113,7 +112,7 @@ class _PreparationStep(Step):
         profile.append(activation)
         etree.SubElement(activation, prefix + 'activeByDefault').text = 'true'
         properties = etree.Element(prefix + 'properties')
-        activation.append(properties)
+        profile.append(properties)
         etree.SubElement(properties, prefix + 'gpg.executable').text = '/usr/bin/gpg'
         etree.SubElement(properties, prefix + 'gpg.useagent').text = 'false'
 
@@ -271,7 +270,8 @@ class _VersionBumpingStep(_MavenStep):
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
             raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
-        self.invokeMaven([
+        invoke([
+            'maven',
             '-DgenerateBackupPoms=false',
             '-DremoveSnapshot=true',
             f'-DnewVersion={major}.{minor}.{micro}',

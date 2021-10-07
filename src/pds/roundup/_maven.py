@@ -224,7 +224,7 @@ class _ArtifactPublicationStep(_MavenStep):
                         if 'version' in l: _logger.debug(f'“{l.strip()}”')
                 # The PDS Maven Parent POM calls it ``release``
                 args = [
-                    'mvn', '--activate-profiles', 'release',
+                    'mvn', '--errors', '--activate-profiles', 'release',
                     '-Dgpg.executable=/usr/bin/gpg', '-Dgpg.useagent=false'
                 ]
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))

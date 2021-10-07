@@ -15,6 +15,7 @@ _mavenNamespace = 'http://maven.apache.org/POM/4.0.0'
 _mavenSettingsNamespace = 'http://maven.apache.org/SETTINGS/1.0.0'
 _xsiNamespace = 'http://www.w3.org/2001/XMLSchema-instance'
 _mavenXSDLocation = 'https://maven.apache.org/xsd/settings-1.0.0.xsd'
+_homeDir = os.getenv('HOME', '/root')  # Yes, in GitHub Actions' container, it's /root!
 
 
 class MavenContext(Context):
@@ -71,7 +72,7 @@ class _PreparationStep(Step):
         '''Create a Maven-compatible ``settings.xml`` file for future use by
         ``Step``s created by this context.
         '''
-        container = '/root/.m2'
+        container = os.path.join(_homeDir, '.m2')
         os.makedirs(container, exist_ok=True)
         settings = os.path.join(container, 'settings.xml')
         if os.path.isfile(settings): return
@@ -121,7 +122,7 @@ class _PreparationStep(Step):
 
     def _createKeyring(self):
         '''Make a GPG keyring we can later use for signing artifacts'''
-        container, keyVarName = '/root/.gnupg', 'CODE_SIGNING_KEY'
+        container, keyVarName = os.path.join(_homeDir, '.gnupg'), 'CODE_SIGNING_KEY'
 
         # Assumption: the .gnupg directory's existence means we've already imported the code signing key
         if os.path.isdir(container): return
@@ -203,9 +204,9 @@ class _GitHubReleaseStep(_MavenStep):
         # create new dev tag if build is successful
         if not self.assembly.isStable():
             self._create_dev_tag()
-            invoke(['maven-release', '--token', token])
-        else:
             invoke(['maven-release', '--snapshot', '--token', token])
+        else:
+            invoke(['maven-release', '--token', token])
 
 
 class _ArtifactPublicationStep(_MavenStep):

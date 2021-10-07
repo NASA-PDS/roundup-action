@@ -280,7 +280,6 @@ class _VersionBumpingStep(_MavenStep):
         invoke([
             'mvn',
             '-DgenerateBackupPoms=false',
-            '-DremoveSnapshot=true',
             f'-DnewVersion={major}.{minor}.{micro}',
             'versions:set'
         ])
@@ -306,7 +305,6 @@ class _CleanupStep(_MavenStep):
         _logger.debug('🔖 Setting version %d.%d.%d-SNAPSHOT in the pom', major, minor, micro)
         self.invokeMaven([
             '-DgenerateBackupPoms=false',
-            '-DremoveSnapshot=false',
             f'-DnewVersion={major}.{minor}.{micro}-SNAPSHOT',
             'versions:set'
         ])

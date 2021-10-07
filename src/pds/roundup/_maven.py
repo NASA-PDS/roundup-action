@@ -202,6 +202,11 @@ class _GitHubReleaseStep(_MavenStep):
 
         # 😮 TODO: Use Python GitHub API!
         # create new dev tag if build is successful
+        _logger.debug('❗️ Before I run maven-release, here is what the pom.xml looks like as far as <version>')
+        with open('pom.xml', 'r') as f:
+            for l in f:
+                if 'version' in l: print(l)
+
         if not self.assembly.isStable():
             self._create_dev_tag()
             invoke(['maven-release', '--snapshot', '--token', token])

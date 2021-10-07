@@ -110,6 +110,11 @@ def main():
     # ugly setting here:
     os.environ['JAVA_HOME'] = os.environ.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
 
+    # Sanity check in GitHub Acions logs: show the version of ``pds-github-util`` by calling
+    # ``--version`` on any one of its programs.
+    pdsGitHubUtilVersion = invoke(['maven-release', '--version']).strip()
+    _logger.info('🗺 The version of ``pds-github-util`` I shall be using: %s', pdsGitHubUtilVersion)
+
     # Here we go daddy
     _assemblies[args.assembly](context).roundup()
     sys.exit(0)

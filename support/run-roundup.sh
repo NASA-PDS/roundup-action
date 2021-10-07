@@ -51,8 +51,9 @@
 defaultSteps="preparation,unitTest,integrationTest,changeLog,requirements,docs,versionBump,build,githubRelease,artifactPublication,docPublication,cleanup"
 
 # Check args
-if [ "$#" -lt 1 -o "$#" -gt 2 ]; then
-    echo "Usage `basename $0` {true|false} [step,step,…]" 1>&2
+if [ "$#" -lt 2 -o "$#" -gt 3 ]; then
+    echo "Usage `basename $0` {stable|unstable} OWNER/REPO [step,step,…]" 1>&2
+    echo "Where OWNER = GitHub owner or organization and REPO = repository name" 1>&2
     echo "Default steps are: $defaultSteps" 1>&2
     exit 1
 fi
@@ -86,8 +87,8 @@ fi
 export ADMIN_GITHUB_TOKEN=`cat ${HOME}/.secrets/github-roundup.token`
 export GITHUB_TOKEN=$ADMIN_GITHUB_TOKEN
 export ROUNDUP_STABLE="$stable"
-export ROUNDUP_STEPS=${2:-$defaultSteps}
-export GITHUB_REPOSITORY=nasa-pds-engineering-node/epitome
+export ROUNDUP_STEPS=${3:-$defaultSteps}
+export GITHUB_REPOSITORY=$2
 export GITHUB_WORKSPACE=${PWD}
 export GITHUB_ACTIONS=true
 export CI=true

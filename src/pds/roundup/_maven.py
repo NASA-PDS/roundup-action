@@ -222,7 +222,11 @@ class _ArtifactPublicationStep(_MavenStep):
                 with open('pom.xml', 'r') as f:
                     for l in f:
                         if 'version' in l: _logger.debug(f'“{l.strip()}”')
-                args = ['mvn', '--activate-profiles', 'release']  # The PDS Maven Parent POM calls it ``release``
+                # The PDS Maven Parent POM calls it ``release``
+                args = [
+                    'mvn', '--activate-profiles', 'release',
+                    '-Dgpg.executable=/usr/bin/gpg', '-Dgpg.useagent=false'
+                ]
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 # self.invokeMaven(args)
                 invoke(args)

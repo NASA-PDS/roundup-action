@@ -218,6 +218,10 @@ class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         if self.assembly.isStable():
             try:
+                _logger.debug('❗️ Before I run `mvn deploy`, here is what the pom.xml looks like as far as <version>')
+                with open('pom.xml', 'r') as f:
+                    for l in f:
+                        if 'version' in l: _logger.debug(f'“{l.strip()}”')
                 args = ['--activate-profiles', 'release']  # The PDS Maven Parent POM calls it ``release``
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)
@@ -272,6 +276,10 @@ class _VersionBumpingStep(_MavenStep):
             f'-DnewVersion={major}.{minor}.{micro}',
             'versions:set'
         ])
+        _logger.debug('❗️ After I ran `mvn versions:set`, here is what the pom.xml looks like as far as <version>')
+        with open('pom.xml', 'r') as f:
+            for l in f:
+                if 'version' in l: _logger.debug(f'“{l.strip()}”')
         commit('pom.xml', f'Bumping version for {major}.{minor}.{micro} release')
 
 

@@ -144,27 +144,7 @@ class _VersionBumpingStep(_PythonStep):
 class _BuildStep(_PythonStep):
     '''A step that makes a Python wheel (of cheese)'''
     def execute(self):
-        if not self.assembly.isStable():
-            # NASA-PDS/pds-template-repo-python#14; make special tags so Versioneer can generate
-            # a compliant version string and so we can shoehorn Maven-style "SNAPSHOT" releases
-            # into the Test PyPi—something for which I'm not sure it was even intended 😒
-            candidate = invokeGIT(['describe', '--always', '--tags'])
-            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
-            if match is None:
-                _logger.info("🐣 No 'v1.2.3' style tags in this repo so assuming we start with 0.0.0; happy birthday!")
-                tag = 'v0.0.0-dev-' + slate
-            else:
-                tag = match.group(1) + '-dev-' + slate
-            git_config()
-            try:
-                invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
-                invoke(['python', 'setup.py', 'bdist_wheel'])
-            finally:
-                invokeGIT(['tag', '--delete', tag])
-        else:
-            # Stable releases, just build away:
-            invoke(['python', 'setup.py', 'bdist_wheel'])
+        invoke(['python', 'setup.py', 'bdist_wheel'])
 
 
 class _GitHubReleaseStep(_PythonStep):

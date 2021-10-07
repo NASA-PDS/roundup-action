@@ -8,6 +8,7 @@ from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, Doc
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config, commit
 from .errors import InvokedProcessError, RoundupError
 import logging, os, re, shutil
+from pds_github_util.release._python_version import TextFileDetective
 
 _logger = logging.getLogger(__name__)
 
@@ -125,22 +126,18 @@ class _VersionBumpingStep(_PythonStep):
             raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
-        srcDir = os.path.join(self.assembly.context.cwd, 'src')
-        if not os.path.isdir(srcDir):
-            raise RoundupError('💢 Your Python repository lacks a `src` directory. Come on! Looking for {srcDir}')
-        versionFile = None
-        for dirpath, dirnames, filenames in os.walk(srcDir):
-            if self._prune.search(dirpath): continue
-            if versionFile is not None: break
-            for fn in filenames:
-                if fn.lower() == 'version.txt':
-                    versionFile = os.path.join(dirpath, fn)
-                    _logger.debug('🪄 Found a version.txt in %s', versionFile)
-                    with open(versionFile, 'w') as inp:
-                        inp.write(f'{major}.{minor}.{micro}\n')
-                        break
-        if versionFile is None:
+        try:
+            version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
+        except ValueError:
+            msg = "Unable to locate ./src directory. Is your repository pproperly structured?"
+            _logger.debug(msg)
+            raise RoundupError(msg)
+
+        if version_file is None:
             raise RoundupError('Unable to locate VERSION.txt in repo. Version bump failed.')
+        else:
+            with open(version_file, 'w') as inp:
+                inp.write(f'{major}.{minor}.{micro}\n')
 
         commit(versionFile, f'Bumping version for {major}.{minor}.{micro} release')
 

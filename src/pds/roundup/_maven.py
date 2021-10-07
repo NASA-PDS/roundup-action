@@ -62,7 +62,8 @@ class _MavenStep(Step):
         return versions[0].text.strip()
     def invokeMaven(self, args):
         '''Invoke Maven with the given ``args``.'''
-        argv = ['mvn', '--quiet'] + args
+        # argv = ['mvn', '--quiet'] + args
+        argv = ['mvn'] + args
         return invoke(argv)
 
 

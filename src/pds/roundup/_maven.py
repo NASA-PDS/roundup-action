@@ -224,14 +224,8 @@ class _ArtifactPublicationStep(_MavenStep):
                     for l in f:
                         if 'version' in l: _logger.debug(f'“{l.strip()}”')
                 args = ['--errors', '--activate-profiles', 'release']
-                # The PDS Maven Parent POM calls it ``release``
-                # args = [
-                #     'mvn', '--errors', '--activate-profiles', 'release',
-                #     '-Dgpg.executable=/usr/bin/gpg', '-Dgpg.useagent=false'
-                # ]
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)
-                # invoke(args)
             except InvokedProcessError as ipe:
                 _logger.error("Error while releasing on the artifactory %s", ipe)
                 _logger.info("let's assume it is because this version has already been released, and move on next step")
@@ -277,12 +271,7 @@ class _VersionBumpingStep(_MavenStep):
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
             raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
-        invoke([
-            'mvn',
-            '-DgenerateBackupPoms=false',
-            f'-DnewVersion={major}.{minor}.{micro}',
-            'versions:set'
-        ])
+        self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])
         _logger.debug('❗️ After I ran `mvn versions:set`, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
             for l in f:
@@ -302,10 +291,7 @@ class _CleanupStep(_MavenStep):
         if not match:
             raise RoundupError(f'Expected Major.Minor.Micro version in pom but got «{pomVersion}»')
         major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
-        _logger.debug('🔖 Setting version %d.%d.%d-SNAPSHOT in the pom', major, minor, micro)
-        self.invokeMaven([
-            '-DgenerateBackupPoms=false',
-            f'-DnewVersion={major}.{minor}.{micro}-SNAPSHOT',
-            'versions:set'
-        ])
+        newVersion = f'{major}.{minor}.{micro}-SNAPSHOT'
+        _logger.debug('🔖 Setting version %s in the pom', newVersion)
+        self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={newVersion}', 'versions:set'])
         commit('pom.xml', f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')

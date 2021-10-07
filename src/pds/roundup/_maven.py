@@ -15,7 +15,7 @@ _mavenNamespace = 'http://maven.apache.org/POM/4.0.0'
 _mavenSettingsNamespace = 'http://maven.apache.org/SETTINGS/1.0.0'
 _xsiNamespace = 'http://www.w3.org/2001/XMLSchema-instance'
 _mavenXSDLocation = 'https://maven.apache.org/xsd/settings-1.0.0.xsd'
-_homeDir = os.getenv('HOME', '/root')  # Yes, in GitHub Actions' container, it's /root!
+_homeDir = '/root' if os.getenv('GITHUB_ACTIONS', 'true') == 'true' else os.getenv('HOME')
 
 
 class MavenContext(Context):

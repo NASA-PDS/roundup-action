@@ -90,7 +90,9 @@ export ROUNDUP_STABLE="$stable"
 export ROUNDUP_STEPS=${3:-$defaultSteps}
 export GITHUB_REPOSITORY=$2
 export GITHUB_WORKSPACE=${PWD}
-export GITHUB_ACTIONS=true
+# Yes GITHUB_ACTIONS should be true to fully simulate things, but we specifically want to check if we need
+# to update credentials in /root (GitHub Actions) or $HOME (everywhere else)
+export GITHUB_ACTIONS=false
 export CI=true
 
 # These are set by GitHub Actions but are otherwise not needed by Roundup…YET.

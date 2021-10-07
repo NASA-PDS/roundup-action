@@ -205,7 +205,7 @@ class _GitHubReleaseStep(_MavenStep):
         _logger.debug('❗️ Before I run maven-release, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
             for l in f:
-                if 'version' in l: print(l)
+                if 'version' in l: _logger.debug(f'“{l.strip()}”')
 
         if not self.assembly.isStable():
             self._create_dev_tag()

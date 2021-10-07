@@ -71,14 +71,15 @@ class _PreparationStep(_PythonStep):
 
 
 class _UnitTestStep(_PythonStep):
-    '''A step to take with Python unit'''
+    '''Unit test step, duh.'''
     def execute(self):
         _logger.debug('Python unit test step')
-        try:
+        tox = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin', 'tox'))
+        if os.path.isfile(tox):
             _logger.debug('Trying the new way: ``tox``')
-            invoke(['tox'])
-        except (InvokedProcessError, FileNotFoundError):
-            _logger.debug("OK, the new way didn't work, trying the old way")
+            invoke([tox, '-e', 'py39'])  # ``py39`` = unit tests
+        else:
+            _logger.debug('Trying the old way: ``setup.py test``')
             invoke(['python', 'setup.py', 'test'])
 
 

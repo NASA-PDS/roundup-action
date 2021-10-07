@@ -7,7 +7,7 @@ from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep, CleanupStep
 from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config, commit
 from .errors import InvokedProcessError, RoundupError
-import logging, os, datetime, re, shutil
+import logging, os, re, shutil
 
 _logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class _VersionBumpingStep(_PythonStep):
     #
     # We could constrain our search to ``src`` but some older PDS repositories—including our own
     # ``pds-github-util``—don't use ``src`` 😩
-    _prune = re.compile(r'/(venv|\.tox|dist|build)|__pycache__')
+    _prune = re.compile(r'__pycache__|\.egg-info')
 
     def execute(self):
         if not self.assembly.isStable():
@@ -124,8 +124,11 @@ class _VersionBumpingStep(_PythonStep):
             raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
+        srcDir = os.path.join(self.assembly.context.cwd, 'src')
+        if not os.path.isdir(srcDir):
+            raise RoundupError('💢 Your Python repository lacks a `src` directory. Come on! Looking for {srcDir}')
         versionFile = None
-        for dirpath, dirnames, filenames in os.walk(self.assembly.context.cwd):
+        for dirpath, dirnames, filenames in os.walk(srcDir):
             if self._prune.search(dirpath): continue
             if versionFile is not None: break
             for fn in filenames:

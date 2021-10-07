@@ -139,7 +139,7 @@ class _VersionBumpingStep(_PythonStep):
             with open(version_file, 'w') as inp:
                 inp.write(f'{major}.{minor}.{micro}\n')
 
-        commit(versionFile, f'Bumping version for {major}.{minor}.{micro} release')
+        commit(version_file, f'Bumping version for {major}.{minor}.{micro} release')
 
 
 class _BuildStep(_PythonStep):

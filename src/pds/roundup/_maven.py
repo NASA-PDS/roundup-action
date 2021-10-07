@@ -115,6 +115,7 @@ class _PreparationStep(Step):
         profile.append(properties)
         etree.SubElement(properties, prefix + 'gpg.executable').text = '/usr/bin/gpg'
         etree.SubElement(properties, prefix + 'gpg.useagent').text = 'false'
+        etree.SubElement(properties, prefix + 'gpg.passphrase').text = ''
 
         tree = etree.ElementTree(root)
         with open(settings, 'wb') as out:
@@ -222,14 +223,15 @@ class _ArtifactPublicationStep(_MavenStep):
                 with open('pom.xml', 'r') as f:
                     for l in f:
                         if 'version' in l: _logger.debug(f'“{l.strip()}”')
+                args = ['--errors', '--activate-profiles', 'release']
                 # The PDS Maven Parent POM calls it ``release``
-                args = [
-                    'mvn', '--errors', '--activate-profiles', 'release',
-                    '-Dgpg.executable=/usr/bin/gpg', '-Dgpg.useagent=false'
-                ]
+                # args = [
+                #     'mvn', '--errors', '--activate-profiles', 'release',
+                #     '-Dgpg.executable=/usr/bin/gpg', '-Dgpg.useagent=false'
+                # ]
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
-                # self.invokeMaven(args)
-                invoke(args)
+                self.invokeMaven(args)
+                # invoke(args)
             except InvokedProcessError as ipe:
                 _logger.error("Error while releasing on the artifactory %s", ipe)
                 _logger.info("let's assume it is because this version has already been released, and move on next step")

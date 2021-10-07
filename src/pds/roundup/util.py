@@ -49,7 +49,7 @@ def invoke(argv):
     '''
     _logger.debug('🏃‍♀️ Running «%r»', argv)
     try:
-        cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
+        cp = subprocess.run(argv, stdin=subprocess.DEVNULL, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         _logger.debug('🏁 Run complete, rc=%d, output=«%s»', cp.returncode, cp.stdout.decode('utf-8'))
         return cp.stdout.decode('utf-8')
     except subprocess.CalledProcessError as ex:

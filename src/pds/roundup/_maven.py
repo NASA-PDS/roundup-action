@@ -222,9 +222,10 @@ class _ArtifactPublicationStep(_MavenStep):
                 with open('pom.xml', 'r') as f:
                     for l in f:
                         if 'version' in l: _logger.debug(f'“{l.strip()}”')
-                args = ['--activate-profiles', 'release']  # The PDS Maven Parent POM calls it ``release``
+                args = ['mvn', '--activate-profiles', 'release']  # The PDS Maven Parent POM calls it ``release``
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
-                self.invokeMaven(args)
+                # self.invokeMaven(args)
+                invoke(args)
             except InvokedProcessError as ipe:
                 _logger.error("Error while releasing on the artifactory %s", ipe)
                 _logger.info("let's assume it is because this version has already been released, and move on next step")

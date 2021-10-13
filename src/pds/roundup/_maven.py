@@ -217,12 +217,12 @@ class _GitHubReleaseStep(_MavenStep):
 
 class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
+        _logger.debug('❗️ Before I run `mvn deploy`, here is what the pom.xml looks like as far as <version>')
+        with open('pom.xml', 'r') as f:
+            for l in f:
+                if 'version' in l: _logger.debug(f'“{l.strip()}”')
         if self.assembly.isStable():
             try:
-                _logger.debug('❗️ Before I run `mvn deploy`, here is what the pom.xml looks like as far as <version>')
-                with open('pom.xml', 'r') as f:
-                    for l in f:
-                        if 'version' in l: _logger.debug(f'“{l.strip()}”')
                 args = ['--errors', '--activate-profiles', 'release']
                 args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
                 self.invokeMaven(args)

@@ -212,9 +212,9 @@ class _GitHubReleaseStep(_PythonStep):
         self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-            invoke(['python-release', '--token', token])
+            invoke(['python-release', '--debug', '--token', token])
         else:
-            invoke(['python-release', '--snapshot', '--token', token])
+            invoke(['python-release', '--debug', '--snapshot', '--token', token])
 
 
 class _ArtifactPublicationStep(_PythonStep):

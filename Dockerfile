@@ -25,6 +25,6 @@ ENTRYPOINT ["/usr/local/bin/roundup"]
 
 RUN : &&\
     pip uninstall --no-input --yes pds-github-util &&\
-    pip install 'git+git://github.com/nasa-pds-engineering-node/pds-github-util@its-big-its-heavy-its-wood#egg=pds_github_util' &&\
+    pip install 'git+git://github.com/nasa-pds-engineering-node/pds-github-util@main#egg=pds_github_util' &&\
     python3 setup.py install --optimize=2 &&\
     :

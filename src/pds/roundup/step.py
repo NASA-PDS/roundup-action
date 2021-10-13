@@ -68,18 +68,6 @@ class NullStep(Step):
         # subprocess.run('/bin/sh')
 
 
-class PreparationStep(Step):
-    '''Prepare the repository for the roundup.'''
-    def execute(self):
-        pass
-
-
-class CleanupStep(Step):
-    '''Clean up and/or perform any final roundup steps after all is said and done.'''
-    def execute(self):
-        pass
-
-
 class ChangeLogStep(Step):
     '''This step generates a PDS-style changelog'''
 

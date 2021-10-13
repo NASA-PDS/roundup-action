@@ -4,8 +4,8 @@
 
 from .context import Context
 from .errors import MissingEnvVarError
-from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep, CleanupStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config, commit
+from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, commit
 from .errors import InvokedProcessError, RoundupError
 import logging, os, re, shutil
 from pds_github_util.release._python_version import TextFileDetective
@@ -20,7 +20,7 @@ class PythonContext(Context):
             StepName.artifactPublication: _ArtifactPublicationStep,
             StepName.build:               _BuildStep,
             StepName.changeLog:           ChangeLogStep,
-            StepName.cleanup:             CleanupStep,
+            StepName.cleanup:             _CleanupStep,
             StepName.docPublication:      _DocPublicationStep,
             StepName.docs:                _DocsStep,
             StepName.githubRelease:       _GitHubReleaseStep,
@@ -255,3 +255,30 @@ class _ArtifactPublicationStep(_PythonStep):
 class _DocPublicationStep(DocPublicationStep):
 
     default_documentation_dir = 'docs/build'
+
+
+class _CleanupStep(_PythonStep):
+    '''Step that tidies up.'
+
+    At this point we're cleaing up so errors are not longer considered awful.
+    '''
+    def execute(self):
+        _logger.debug('Python cleanup step')
+        if not self.assembly.isStable():
+            _logger.debug('Skipping cleanup for unstable build')
+            return
+        detective = TextFileDetective(self.assembly.context.cwd)
+        version, version_file = detective.detect(), detective.locate_file(self.assembly.context.cwd)
+        if not version:
+            _logger.info('Could not figure out the version left in src/…/VERSION.txt, but we made it this far so punt')
+            return
+        match = re.match(r'(\d+)\.(\d+)\.(\d+)', version)
+        if not match:
+            _logger.info(f'Expected Major.Minor.Micro version in src/…/VERSION.txt but got «{version}» but whatever')
+            return
+        major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
+        new_version = f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
+        with open(version_file, 'w') as f:
+            f.write(f'{new_version}\n')
+        commit(version_file, f'Setting next dev version to {major}.{minor}.{micro}')

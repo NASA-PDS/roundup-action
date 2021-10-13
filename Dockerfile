@@ -9,6 +9,11 @@ FROM nasapds/pds-github-actions-base:latest
 
 LABEL "com.github.actions.name"="PDS Roundup"
 
+# Let's Have Nice Things
+# ----------------------
+
+ENV PYTHONUNBUFFERED=1
+
 
 # Image Details
 # -------------
@@ -16,5 +21,5 @@ LABEL "com.github.actions.name"="PDS Roundup"
 WORKDIR    /usr/src/roundup
 COPY       README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
 COPY       src/ ./src
-RUN        python3 setup.py --quiet install --optimize=2
+RUN        pip uninstall --no-input --yes pds-github-util && python3 setup.py install --optimize=2
 ENTRYPOINT ["/usr/local/bin/roundup"]

@@ -145,7 +145,10 @@ class _VersionBumpingStep(_PythonStep):
 class _BuildStep(_PythonStep):
     '''A step that makes a Python wheel (of cheese)'''
     def execute(self):
-        invoke(['python', 'setup.py', 'bdist_wheel'])
+        if self.assembly.isStable():
+            invoke(['python', 'setup.py', 'bdist_wheel'])
+        else:
+            invoke(['python', 'setup.py', 'egg_info', '--tag-build', 'dev', 'bdist_wheel'])
 
 
 class _GitHubReleaseStep(_PythonStep):

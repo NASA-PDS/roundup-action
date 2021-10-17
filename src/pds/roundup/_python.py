@@ -60,7 +60,8 @@ class _PreparationStep(_PythonStep):
     def execute(self):
         _logger.debug('Python preparation step')
         shutil.rmtree('venv', ignore_errors=True)
-        invoke(['python', '-m', 'venv', 'venv'])
+        # We add access to system site packages so that projects can save time if they need numpy, pandas, etc.
+        invoke(['python', '-m', 'venv', '--system-site-packages', 'venv'])
         # Do the pseudo-equivalent of ``activate``:
         venvBin = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin'))
         os.environ['PATH'] = f'{venvBin}:{os.environ["PATH"]}'

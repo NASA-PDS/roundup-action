@@ -1,13 +1,14 @@
 # 🤠 PDS Engineering: Roundup
 # ============================
 
-FROM nasapds/pds-github-actions-base:latest
+FROM nasapds/github-actions-base:latest
 
 
 # Metadata
 # --------
 
 LABEL "com.github.actions.name"="PDS Roundup"
+
 
 # Let's Have Nice Things
 # ----------------------
@@ -23,6 +24,7 @@ COPY       README.md CHANGELOG.md LICENSE.txt setup.cfg setup.py ./
 COPY       src/ ./src
 ENTRYPOINT ["/usr/local/bin/roundup"]
 
+# Uninstalling pds-github-util should no longer be necessary
 RUN : &&\
     pip uninstall --no-input --yes pds-github-util &&\
     pip install 'git+git://github.com/nasa-pds-engineering-node/pds-github-util@stable#egg=pds_github_util' &&\

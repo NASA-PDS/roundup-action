@@ -164,12 +164,12 @@ class _GitHubReleaseStep(_PythonStep):
         # First do an "unshallow" fetch, with tags, and getting rid of obsolete detritus.
         # (Why they heck is it called "unshallow" when we have a perfectly good word for it in English: "deep"):
         try:
-            invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
+            invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
         except InvokedProcessError:
             # For a reason I can't fathom, the --unshallow (a/k/a "deep") fails, so let's just do it again
             # without that option:
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
-            invokeGIT(['fetch', '--prune', '--tags'])
+            invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
 
         # Next, find all the tags with dev in their name and delete them
         tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')

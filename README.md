@@ -45,7 +45,7 @@ This causes the Roundup to use OpenJDK 11 and also installs the `pdfgrep` packag
 
 #### ☕️ Java Note
 
-If you install an JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environemnt variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
+If you install an JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environment variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
 
 
 ### 👮‍♂️ GitHub Admin Token
@@ -116,16 +116,15 @@ There are several different flavors of roundups that you can specify `with` the 
 
 ### 🛫 Releases
 
-The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Generic Template Repository](https://github.com/NASA-PDS/pds-template-repo-generic) and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) have the correct GitHub Actions workflows to support this. If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
+The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Java Template Repository](https://github.com/NASA-PDS/pds-template-repo-java) (historically called the "generic template") and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) (historically called the Python template) have the correct GitHub Actions workflows to support this. If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
 
-To make an _official generic software release_ (i.e., a Maven-based Java software release, which for some reason the PDS calls "generic"), simply create a branch with the [semantic version](https://semver.org) number preceded by `v`—such as `v1.2.3`—and push it to GitHub. The Maven release mechanisms will take care of creating the appropriate artifacts and registering them with [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html).
-
-To make an _official Python software release_, you've got a bit more flexibility. Create a branch called `release/VERSION` where VERSION is a full or partial `MAJOR.MINOR` semantic version. The Roundup will use the branch given or compute the next release automatically. For example:
-
-- `release/1.5` — make the next release in the `1.5` lineage; for example, if the last was `v1.5.14` the next will be `v1.5.15`.
-- `release/1.5.15` — make a `v1.5.15` release
-
-The Roundup won't automatically go from `v1.5` to `v1.6`, for example, because such a break in semantic versioning requires thought that a human is mostly better able to do (same goes for `v1` → `v2`).
+To make an offical release of software version `VERSION`, create a branch called `release/VERSION` and push it to GitHub. For example, to release version 2.0.17 of your software based on the latest `main`:
+```console
+$ git checkout main
+$ git pull
+$ git branch --track release/2.0.17
+$ git push origin release/2.0.17
+```
 
 
 ## 💁‍♀️ Demonstration
@@ -207,4 +206,10 @@ Or build it to run outside of a container; for example:
     python3 -m venv venv
     venv/bin/pip install --quiet --upgrade setuptools wheel pip
     venv/bin/pip install --editable .
-    env ADMIN_GITHUB_TOKEN=abcd0123 GITHUB_REPOSITORY=owner/repo GITHUB_WORKSPACE=/tmp PATH=${PWD}/bin:${PATH} venv/bin/roundup --debug --assembly unstable
+
+Then add `venv/bin/pip` to your `PATH` and use the convenience script, `support/run-roundup.sh`:
+
+    cd my-project-directory
+    ../roundup-action/support/run-roundup.sh unstable
+
+Note that to use `run-roundup.sh` you need to set quite a few other environment variables, prepare some files, and ensure certain commands are on the `PATH`. See the comments in the script for details.

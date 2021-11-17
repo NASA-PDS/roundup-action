@@ -7,17 +7,19 @@
 from .context import Context
 from .errors import InvokedProcessError
 from .util import populateEnvVars, invoke
-from .assembly import StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly
-
+from .assembly import (
+    StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly, EnvironmentalAssembly
+)
 import os, logging, argparse, sys
 
 _logger = logging.getLogger(__name__)
 
 _assemblies = {
-    'stable': StablePDSAssembly,
-    'unstable': UnstablePDSAssembly,
+    'env':         EnvironmentalAssembly,
     'integration': IntegrativePDSAssembly,
-    'noop': NoOpAssembly,
+    'noop':        NoOpAssembly,
+    'stable':      StablePDSAssembly,
+    'unstable':    UnstablePDSAssembly,
 }
 _defaultAssembly = 'unstable'
 
@@ -107,6 +109,11 @@ def main():
     # quitting time and I'm trying to solve a specific issue (#14), I'm doing this
     # ugly setting here:
     os.environ['JAVA_HOME'] = os.environ.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
+
+    # Sanity check in GitHub Acions logs: show the version of ``pds-github-util`` by calling
+    # ``--version`` on any one of its programs.
+    pdsGitHubUtilVersion = invoke(['maven-release', '--version']).strip()
+    _logger.info('🗺 The version of ``pds-github-util`` I shall be using: %s', pdsGitHubUtilVersion)
 
     # Here we go daddy
     _assemblies[args.assembly](context).roundup()

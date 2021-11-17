@@ -5,9 +5,10 @@
 from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, git_config
-from .errors import InvokedProcessError
-import logging, os, datetime, re
+from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, commit
+from .errors import InvokedProcessError, RoundupError
+import logging, os, re, shutil
+from pds_github_util.release._python_version import TextFileDetective
 
 _logger = logging.getLogger(__name__)
 
@@ -16,16 +17,19 @@ class PythonContext(Context):
     '''A Python context supports Python software proejcts'''
     def __init__(self, cwd, environ, args):
         self.steps = {
-            StepName.null:                NullStep,
-            StepName.unitTest:            _UnitTestStep,
-            StepName.integrationTest:     _IntegrationTestStep,
-            StepName.changeLog:           ChangeLogStep,
-            StepName.requirements:        RequirementsStep,
-            StepName.docs:                _DocsStep,
-            StepName.build:               _BuildStep,
-            StepName.githubRelease:       _GitHubReleaseStep,
             StepName.artifactPublication: _ArtifactPublicationStep,
+            StepName.build:               _BuildStep,
+            StepName.changeLog:           ChangeLogStep,
+            StepName.cleanup:             _CleanupStep,
             StepName.docPublication:      _DocPublicationStep,
+            StepName.docs:                _DocsStep,
+            StepName.githubRelease:       _GitHubReleaseStep,
+            StepName.integrationTest:     _IntegrationTestStep,
+            StepName.null:                NullStep,
+            StepName.preparation:         _PreparationStep,
+            StepName.requirements:        RequirementsStep,
+            StepName.unitTest:            _UnitTestStep,
+            StepName.versionBump:         _VersionBumpingStep,
         }
         super(PythonContext, self).__init__(cwd, environ, args)
 
@@ -40,7 +44,10 @@ class _PythonStep(Step):
         return 'https://upload.pypi.org/legacy/' if self.assembly.isStable() else 'https://test.pypi.org/legacy/'
 
     def getCheeseshopCredentials(self):
-        '''Get the username and password (as a tuple) to use to log into the PyPI'''
+        '''Get the username and password (as a tuple) to use to log into the PyPI.
+
+        ☑️ TODO: Use an API token instead of a username and password.
+        '''
         env = self.assembly.context.environ
         username, password = env.get('pypi_username'), env.get('pypi_password')
         if not username: raise MissingEnvVarError('pypi_username')
@@ -48,16 +55,33 @@ class _PythonStep(Step):
         return username, password
 
 
+class _PreparationStep(_PythonStep):
+    '''Prepare the python repository for action.'''
+    def execute(self):
+        _logger.debug('Python preparation step')
+        shutil.rmtree('venv', ignore_errors=True)
+        # We add access to system site packages so that projects can save time if they need numpy, pandas, etc.
+        invoke(['python', '-m', 'venv', '--system-site-packages', 'venv'])
+        # Do the pseudo-equivalent of ``activate``:
+        venvBin = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin'))
+        os.environ['PATH'] = f'{venvBin}:{os.environ["PATH"]}'
+        # Make sure we have the latest of pip+setuptools+wheel
+        invoke(['pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
+        # Now install the package being rounded up
+        invoke(['pip', 'install', '--editable', '.[dev]'])
+        # ☑️ TODO: what other prep steps are there? What about VERSION.txt overwriting?
+
+
 class _UnitTestStep(_PythonStep):
-    '''A step to take with Python unit'''
+    '''Unit test step, duh.'''
     def execute(self):
         _logger.debug('Python unit test step')
-        try:
-            _logger.debug('Trying the new way: installing the dev extra using ``pip`` and then running ``tox``')
-            invoke(['pip', 'install', '--editable', '.[dev]'])
-            invoke(['tox'])
-        except (InvokedProcessError, FileNotFoundError):
-            _logger.debug("OK, the new way didn't work, trying the old way")
+        tox = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin', 'tox'))
+        if os.path.isfile(tox):
+            _logger.debug('Trying the new way: ``tox``')
+            invoke([tox, '-e', 'py39'])  # ``py39`` = unit tests
+        else:
+            _logger.debug('Trying the old way: ``setup.py test``')
             invoke(['python', 'setup.py', 'test'])
 
 
@@ -75,30 +99,57 @@ class _DocsStep(_PythonStep):
         invoke(['sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
 
 
+class _VersionBumpingStep(_PythonStep):
+    ''''''
+    # Filter out directory paths with these in them when trying to find VERSION.txt
+    #
+    # We could constrain our search to ``src`` but some older PDS repositories—including our own
+    # ``pds-github-util``—don't use ``src`` 😩
+    _prune = re.compile(r'__pycache__|\.egg-info')
+
+    def execute(self):
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version bump for unstable build')
+            return
+
+        branch = invokeGIT(['branch', '--show-current']).strip()
+
+        if not branch:
+            raise RoundupError('🕊 Cannot determine what branch we are on, version bump failed')
+
+        match = BRANCH_RE.match(branch)
+        if not match:
+            raise RoundupError(f'🐎 Stable push to branch «{branch}» but not a ``release/`` branch')
+
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        if micro is None:
+            raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+
+        _logger.debug("Locating VERSION.txt to update with new release version.")
+        try:
+            version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
+        except ValueError:
+            msg = "Unable to locate ./src directory. Is your repository pproperly structured?"
+            _logger.debug(msg)
+            raise RoundupError(msg)
+
+        if version_file is None:
+            raise RoundupError('Unable to locate VERSION.txt in repo. Version bump failed.')
+        else:
+            with open(version_file, 'w') as inp:
+                inp.write(f'{major}.{minor}.{micro}\n')
+
+        commit(version_file, f'Bumping version for {major}.{minor}.{micro} release')
+
+
 class _BuildStep(_PythonStep):
     '''A step that makes a Python wheel (of cheese)'''
     def execute(self):
-        if not self.assembly.isStable():
-            # NASA-PDS/pds-template-repo-python#14; make special tags so Versioneer can generate
-            # a compliant version string and so we can shoehorn Maven-style "SNAPSHOT" releases
-            # into the Test PyPi—something for which I'm not sure it was even intended 😒
-            candidate = invokeGIT(['describe', '--always', '--tags'])
-            slate = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            match = re.match(r'^(v\d+\.\d+\.\d+)', candidate)
-            if match is None:
-                _logger.info("🐣 No 'v1.2.3' style tags in this repo so assuming we start with 0.0.0; happy birthday!")
-                tag = 'v0.0.0-dev-' + slate
-            else:
-                tag = match.group(1) + '-dev-' + slate
-            git_config()
-            try:
-                invokeGIT(['tag', '--annotate', '--force', '--message', f'Snapshot {slate}', tag])
-                invoke(['python', 'setup.py', 'bdist_wheel'])
-            finally:
-                invokeGIT(['tag', '--delete', tag])
-        else:
-            # Stable releases, just build away:
+        if self.assembly.isStable():
             invoke(['python', 'setup.py', 'bdist_wheel'])
+        else:
+            invoke(['python', 'setup.py', 'egg_info', '--tag-build', 'dev', 'bdist_wheel'])
 
 
 class _GitHubReleaseStep(_PythonStep):
@@ -113,12 +164,12 @@ class _GitHubReleaseStep(_PythonStep):
         # First do an "unshallow" fetch, with tags, and getting rid of obsolete detritus.
         # (Why they heck is it called "unshallow" when we have a perfectly good word for it in English: "deep"):
         try:
-            invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
+            invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
         except InvokedProcessError:
             # For a reason I can't fathom, the --unshallow (a/k/a "deep") fails, so let's just do it again
             # without that option:
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
-            invokeGIT(['fetch', '--prune', '--tags'])
+            invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
 
         # Next, find all the tags with dev in their name and delete them
         tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
@@ -165,9 +216,9 @@ class _GitHubReleaseStep(_PythonStep):
         self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-            invoke(['python-release', '--token', token])
+            invoke(['python-release', '--debug', '--token', token])
         else:
-            invoke(['python-release', '--snapshot', '--token', token])
+            invoke(['python-release', '--debug', '--snapshot', '--token', token])
 
 
 class _ArtifactPublicationStep(_PythonStep):
@@ -208,3 +259,30 @@ class _ArtifactPublicationStep(_PythonStep):
 class _DocPublicationStep(DocPublicationStep):
 
     default_documentation_dir = 'docs/build'
+
+
+class _CleanupStep(_PythonStep):
+    '''Step that tidies up.'
+
+    At this point we're cleaing up so errors are not longer considered awful.
+    '''
+    def execute(self):
+        _logger.debug('Python cleanup step')
+        if not self.assembly.isStable():
+            _logger.debug('Skipping cleanup for unstable build')
+            return
+        detective = TextFileDetective(self.assembly.context.cwd)
+        version, version_file = detective.detect(), detective.locate_file(self.assembly.context.cwd)
+        if not version:
+            _logger.info('Could not figure out the version left in src/…/VERSION.txt, but we made it this far so punt')
+            return
+        match = re.match(r'(\d+)\.(\d+)\.(\d+)', version)
+        if not match:
+            _logger.info(f'Expected Major.Minor.Micro version in src/…/VERSION.txt but got «{version}» but whatever')
+            return
+        major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
+        new_version = f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
+        with open(version_file, 'w') as f:
+            f.write(f'{new_version}\n')
+        commit(version_file, f'Setting next dev version to {major}.{minor}.{micro}')

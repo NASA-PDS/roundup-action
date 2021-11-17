@@ -23,7 +23,10 @@ class Assembly(object):
 
     def roundup(self):
         '''Round 'em up, pardner! 🤠'''
-        _logger.debug('🤠 Preparing roundup for %r with the following steps: %r', self.context, self.stepNames)
+        _logger.debug(
+            '🤠 Preparing %s roundup for %r with the following steps: %r',
+            self.__class__.__name__, self.context, self.stepNames
+        )
         steps = []
         for stepName in self.stepNames:
             _logger.debug("Creating step %s", stepName)
@@ -35,7 +38,7 @@ class Assembly(object):
                 _logger.info('For context %r no step was available for %s; ignoring this step', self.context, stepName)
         _logger.debug('Executing roundup')
         for step in steps:
-            _logger.info("Executing step %s", step.__class__.__name__)
+            _logger.info("🏎▁▂▃▄▅▆▆▇▇██💨 EXECUTING step %s", step.__class__.__name__)
             step.execute()
 
     def isStable(self):
@@ -58,9 +61,11 @@ class NoOpAssembly(Assembly):
 class PDSAssembly(Assembly):
     '''The PDS-flavored assembly which has 9 different steps'''
     pdsSteps = [
+        StepName.preparation,
         StepName.unitTest,
         StepName.integrationTest,
         StepName.docs,
+        StepName.versionBump,
         StepName.build,
         StepName.artifactPublication,
         # NASA-PDS/roundup-action#29: generate the requirements before tagging the release
@@ -69,6 +74,7 @@ class PDSAssembly(Assembly):
         StepName.changeLog,
         StepName.githubRelease,
         StepName.docPublication,
+        StepName.cleanup,
     ]
 
     def __init__(self, context):
@@ -93,6 +99,7 @@ class IntegrativePDSAssembly(UnstablePDSAssembly):
     See https://github.com/NASA-PDS/roundup-action/issues/46 for more information.
     '''
     pdsSteps = [
+        StepName.preparation,
         StepName.unitTest,
         StepName.integrationTest,
         StepName.docs,
@@ -100,4 +107,24 @@ class IntegrativePDSAssembly(UnstablePDSAssembly):
         StepName.artifactPublication,
         StepName.githubRelease,
         StepName.docPublication,
+        StepName.cleanup,
     ]
+
+
+class EnvironmentalAssembly(Assembly):
+    '''An assembly whose actions are controlled through the environment.
+
+    To take advantage of this assembly, set these two environment variables before starting:
+
+    • ROUNDUP_STABLE set to ``True`` (or ``true`` or ``1``) for a stable assembly, otherwise unstable
+    • ROUNDUP_STEPS set to a comma-separated sequence of step names to use, like ``preparation,build,cleanup``
+      See the ``pds.roundup.step.StepName`` enumeration for the possible step names.
+
+    Then pass the ``--assembly env`` command-line argument to the ``roundup`` executable.
+    '''
+    def __init__(self, context, stepNames=[]):
+        self._isStable = context.environ.get('ROUNDUP_STABLE', 'False').lower().strip() in ('true', '1')
+        super().__init__(context, [StepName(i) for i in context.environ.get('ROUNDUP_STEPS', '').strip().split(',')])
+
+    def isStable(self):
+        return self._isStable

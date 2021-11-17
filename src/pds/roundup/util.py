@@ -35,7 +35,7 @@ def populateEnvVars(env):
     copy['ossrh_password'] = ossrh_password
     copy['JAVA_HOME']      = java_home
 
-    for var in ('GITHUB_TOKEN', 'GITHUB_REPOSITORY'):  # 🤔 TODO: is GITHUB_TOKEN really used?
+    for var in ('GITHUB_REPOSITORY',):  # List other important vars here
         if var not in env:
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 
@@ -50,7 +50,9 @@ def invoke(argv):
     _logger.debug('🏃‍♀️ Running «%r»', argv)
     try:
         cp = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True, check=True)
-        _logger.debug('🏁 Run complete, rc=%d, output=«%s»', cp.returncode, cp.stdout.decode('utf-8'))
+        _logger.debug('🏁 Run complete, rc=%d', cp.returncode)
+        _logger.debug('Stdout = «%s»', cp.stdout.decode('utf-8'))
+        _logger.debug('Stderr = «%s»', cp.stderr.decode('utf-8'))
         return cp.stdout.decode('utf-8')
     except subprocess.CalledProcessError as ex:
         _logger.critical('💥 Process with command line %r failed with status %d', argv, ex.returncode)
@@ -105,6 +107,8 @@ def git_pull():
 def commit(filename, message):
     '''Commit the file named ``filename`` to the local Git repository with the given ``message``.
     '''
+    _logger.debug('🥼 Committing file %s with message «%s»', filename, message)
+    git_config()
     invokeGIT(['add', filename])
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work

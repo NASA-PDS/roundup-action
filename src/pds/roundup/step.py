@@ -36,16 +36,19 @@ class Step(object):
 
 class StepName(Enum):
     '''Enumerated identifiers for each of the possible steps of a roundup'''
-    null                = 'null'
-    unitTest            = 'unitTest'
-    integrationTest     = 'integrationTest'
-    changeLog           = 'changeLog'
-    requirements        = 'requirements'
-    docs                = 'docs'
-    build               = 'build'
-    githubRelease       = 'githubRelease'
     artifactPublication = 'artifactPublication'
+    build               = 'build'
+    changeLog           = 'changeLog'
+    cleanup             = 'cleanup'
     docPublication      = 'docPublication'
+    docs                = 'docs'
+    githubRelease       = 'githubRelease'
+    integrationTest     = 'integrationTest'
+    null                = 'null'
+    preparation         = 'preparation'
+    requirements        = 'requirements'
+    unitTest            = 'unitTest'
+    versionBump         = 'versionBump'
 
 
 # Common Steps

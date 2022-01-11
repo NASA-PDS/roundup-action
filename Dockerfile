@@ -25,6 +25,6 @@ COPY       src/ ./src
 ENTRYPOINT ["/usr/local/bin/roundup"]
 
 RUN : &&\
-    pip install 'git+git://github.com/NASA-PDS/pds-github-util@stable#egg=pds_github_util' &&\
+    pip install 'git+https://github.com/NASA-PDS/pds-github-util@stable#egg=pds_github_util' &&\
     python3 setup.py install --optimize=2 &&\
     :

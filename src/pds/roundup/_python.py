@@ -67,6 +67,8 @@ class _PreparationStep(_PythonStep):
         os.environ['PATH'] = f'{venvBin}:{os.environ["PATH"]}'
         # Make sure we have the latest of pip+setuptools+wheel
         invoke(['pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
+        # #79: ensure that the venv has its own ``sphinx-build``
+        invoke(['pip', 'install', '--quiet', '--ignore-installed', 'sphinx'])
         # Now install the package being rounded up
         invoke(['pip', 'install', '--editable', '.[dev]'])
         # ☑️ TODO: what other prep steps are there? What about VERSION.txt overwriting?

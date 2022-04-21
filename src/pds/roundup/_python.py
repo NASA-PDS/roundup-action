@@ -282,8 +282,9 @@ class _CleanupStep(_PythonStep):
         if not match:
             _logger.info(f'Expected Major.Minor.Micro version in src/…/VERSION.txt but got «{version}» but whatever')
             return
-        major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
-        new_version = f'{major}.{minor}.{micro}'
+        # NASA-PDS/roundup-action#81: Jordan would prefer the `minor` version get bumped, not the `micro` version:
+        major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
+        new_version = f'{major}.{minor}.0'
         _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
         with open(version_file, 'w') as f:
             f.write(f'{new_version}\n')

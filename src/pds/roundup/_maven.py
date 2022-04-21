@@ -292,7 +292,7 @@ class _CleanupStep(_MavenStep):
             raise RoundupError(f'Expected Major.Minor.Micro version in pom but got «{pomVersion}»')
         # NASA-PDS/roundup-action#81: Jordan would prefer the `minor` version get bumped, not the `micro` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
-        newVersion = f'{major}.{minor}.{micro}-SNAPSHOT'
+        newVersion = f'{major}.{minor}.0-SNAPSHOT'
         _logger.debug('🔖 Setting version %s in the pom', newVersion)
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={newVersion}', 'versions:set'])
         commit('pom.xml', f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')

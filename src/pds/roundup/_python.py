@@ -284,7 +284,7 @@ class _CleanupStep(_PythonStep):
             return
         # NASA-PDS/roundup-action#81: Jordan would prefer the `minor` version get bumped, not the `micro` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
-        new_version = f'{major}.{minor}.{micro}'
+        new_version = f'{major}.{minor}.0'
         _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
         with open(version_file, 'w') as f:
             f.write(f'{new_version}\n')

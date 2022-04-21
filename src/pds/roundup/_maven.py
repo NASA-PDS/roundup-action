@@ -58,12 +58,24 @@ class _MavenStep(Step):
                 '☡ More than one ``<version>`` found in %s; using the first one, but your POM is bad',
                 pomFile
             )
-
         return versions[0].text.strip()
+
     def invokeMaven(self, args):
         '''Invoke Maven with the given ``args``.'''
         argv = ['mvn', '--quiet'] + args
         return invoke(argv)
+
+    def commit_poms(self, message):
+        '''Commit all poms to the HEAD of main with the given ``message``.'''
+        for folder, subdirs, filenames in os.walk(self.assembly.context.cwd):
+            for fn in filenames:
+                if fn == 'pom.xml':
+                    path = os.path.join(folder, fn)
+                    invokeGIT(['add', path])
+        invokeGIT(['commit', '--allow-empty', '--message', message])
+        # TODO: understand why a simple push does not work and make it work
+        # see bug https://github.com/actions/checkout/issues/317
+        invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
 
 
 class _PreparationStep(Step):
@@ -276,7 +288,7 @@ class _VersionBumpingStep(_MavenStep):
         with open('pom.xml', 'r') as f:
             for l in f:
                 if 'version' in l: _logger.debug(f'“{l.strip()}”')
-        commit('pom.xml', f'Bumping version for {major}.{minor}.{micro} release')
+        self.commit_poms(f'Bumping version for {major}.{minor}.{micro} release')
 
 
 class _CleanupStep(_MavenStep):
@@ -294,4 +306,4 @@ class _CleanupStep(_MavenStep):
         newVersion = f'{major}.{minor}.{micro}-SNAPSHOT'
         _logger.debug('🔖 Setting version %s in the pom', newVersion)
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={newVersion}', 'versions:set'])
-        commit('pom.xml', f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
+        self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')

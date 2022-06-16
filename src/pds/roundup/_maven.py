@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, BRANCH_RE, commit
+from .util import invoke, invokeGIT, BRANCH_RE, commit, git_config
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -67,6 +67,7 @@ class _MavenStep(Step):
 
     def commit_poms(self, message):
         '''Commit all poms to the HEAD of main with the given ``message``.'''
+        git_config()
         for folder, subdirs, filenames in os.walk(self.assembly.context.cwd):
             for fn in filenames:
                 if fn == 'pom.xml':

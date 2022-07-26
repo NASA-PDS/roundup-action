@@ -72,7 +72,12 @@ class _MavenStep(Step):
             for fn in filenames:
                 if fn == 'pom.xml':
                     path = os.path.join(folder, fn)
-                    invokeGIT(['add', path])
+                    try:
+                        invokeGIT(['add', path])
+                    except InvokedProcessError:
+                        # #87: we may have just tried to add a generated pom.xml which is in the ``.gitignore``
+                        # file. No need to add it! Just treat this softly and continue on.
+                        _logger.info('🤫 Ignoring ``git add`` on %s', path)
         invokeGIT(['commit', '--allow-empty', '--message', message])
         # TODO: understand why a simple push does not work and make it work
         # see bug https://github.com/actions/checkout/issues/317

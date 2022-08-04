@@ -81,7 +81,7 @@ class _MavenStep(Step):
         invokeGIT(['commit', '--allow-empty', '--message', message])
         # TODO: understand why a simple push does not work and make it work
         # see bug https://github.com/actions/checkout/issues/317
-        invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
+        invokeGIT(['push', 'origin',  'HEAD:main'])
 
 
 class _PreparationStep(Step):

@@ -79,9 +79,14 @@ class _MavenStep(Step):
                         # file. No need to add it! Just treat this softly and continue on.
                         _logger.info('🤫 Ignoring ``git add`` on %s', path)
         invokeGIT(['commit', '--allow-empty', '--message', message])
-        # TODO: understand why a simple push does not work and make it work
-        # see bug https://github.com/actions/checkout/issues/317
-        invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
+
+        # To resolve #76, @jordnpadams removed the ``--force`` from the git invocation below ↓
+        #
+        # Which is nice, because it's good to protect the `main` branch from recently made commits
+        # & merged. However, we added the ``--force`` in the first place because we randomly got
+        # ``You are not currently on a branch`` errors.  Somehow, this is related to
+        # https://github.com/actions/checkout/issues/317
+        invokeGIT(['push', 'origin',  'HEAD:main'])
 
 
 class _PreparationStep(Step):

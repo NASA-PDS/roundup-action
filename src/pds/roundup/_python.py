@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import MissingEnvVarError
 from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, BRANCH_RE, findNextMicro, commit
+from .util import invoke, invokeGIT, TAG_RE, commit
 from .errors import InvokedProcessError, RoundupError
 import logging, os, re, shutil
 from pds_github_util.release._python_version import TextFileDetective
@@ -114,25 +114,28 @@ class _VersionBumpingStep(_PythonStep):
             _logger.debug('Skipping version bump for unstable build')
             return
 
-        branch = invokeGIT(['branch', '--show-current']).strip()
+        # Figure out the tag name; we use ``--tags`` to pick up all tags, not just the annotated
+        # ones. This'll help reduce erros by users who forget to annotate (``-a`` or ``--annoate``)
+        # their tags. The ``--abbrev 0`` truncates any post-tag commits
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
 
-        if not branch:
-            raise RoundupError('🕊 Cannot determine what branch we are on, version bump failed')
+        if not tag:
+            raise RoundupError('🕊 Cannot determine the release tag; version bump failed')
 
-        match = BRANCH_RE.match(branch)
+        match = TAG_RE.match(tag)
         if not match:
-            raise RoundupError(f'🐎 Stable push to branch «{branch}» but not a ``release/`` branch')
+            raise RoundupError(f'🐎 Stable tag of «{tag}» but not a ``release/`` tag')
 
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
-            raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+            raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
 
         _logger.debug("Locating VERSION.txt to update with new release version.")
         try:
             version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
         except ValueError:
-            msg = "Unable to locate ./src directory. Is your repository pproperly structured?"
+            msg = 'Unable to locate ./src directory. Is your repository properly structured?'
             _logger.debug(msg)
             raise RoundupError(msg)
 
@@ -189,20 +192,19 @@ class _GitHubReleaseStep(_PythonStep):
                 )
 
     def _tagRelease(self):
-        '''Tag the current release using the branch name to signify the tag'''
+        '''Tag the current release using the v1.2.3-style tag based on the release/1.2.3-style tag.'''
         _logger.debug('🏷 Tagging the release')
-        branch = invokeGIT(['branch', '--show-current']).strip()
-        if not branch:
-            _logger.debug('🕊 Cannot determine what branch we are on, so skipping tagging')
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            _logger.debug('🕊 Cannot determine what tag we are currently on, so skipping re-tagging')
             return
-        match = BRANCH_RE.match(branch)
+        match = TAG_RE.match(tag)
         if not match:
-            _logger.debug('🐎 Stable push to branch «%s» but not a ``release/`` branch, so skipping tagging', branch)
+            _logger.debug('🐎 Stable tag at «%s» but not a ``release/`` style tag, so skipping tagging', tag)
             return
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
-        if micro is None:
-            micro = findNextMicro()
+        # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
         tag = f'v{major}.{minor}.{micro}'
         _logger.debug('🆕 New tag will be %s', tag)
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
@@ -282,7 +284,7 @@ class _CleanupStep(_PythonStep):
         if not match:
             _logger.info(f'Expected Major.Minor.Micro version in src/…/VERSION.txt but got «{version}» but whatever')
             return
-        # NASA-PDS/roundup-action#81: Jordan would prefer the `minor` version get bumped, not the `micro` version:
+        # NASA-PDS/roundup-action#81: Jordan would prefer the ``minor`` version get bumped, not the ``micro`` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         new_version = f'{major}.{minor}.0'
         _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)

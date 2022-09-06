@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 # Constants
 # =========
 
-BRANCH_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
+TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
 
 

@@ -3,7 +3,7 @@
 '''🤠 PDS Roundup: A step takes you further towards a complete roundup'''
 
 from enum import Enum
-from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, BRANCH_RE
+from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE
 import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
@@ -86,13 +86,14 @@ class ChangeLogStep(Step):
         For NASA-PDS/roundup-action#29.
         '''
         _logger.debug('🏷 For changelog generation, figuring out the future release')
-        branch = invokeGIT(['branch', '--show-current']).strip()
-        if not branch:
-            _logger.debug('🕊 Cannot determine what branch we are on, so using «unknown»')
+
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            _logger.debug('🕊 Cannot determine what tag we are on for changelog future, so using «unknown»')
             return '«unknown»'
-        match = BRANCH_RE.match(branch)
+        match = TAG_RE.match(tag)
         if not match:
-            _logger.debug('🐎 This is not a ``release/`` branch, so using «unknown»')
+            _logger.debug('🐎 This is not a ``release/`` tag, so using «unknown»')
             return '«unknown»'
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 Okay, we got version %d.%d.%s', major, minor, micro)

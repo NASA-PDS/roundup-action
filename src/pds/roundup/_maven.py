@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, BRANCH_RE, commit, git_config
+from .util import invoke, invokeGIT, TAG_RE, commit, git_config
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -86,7 +86,7 @@ class _MavenStep(Step):
         # & merged. However, we added the ``--force`` in the first place because we randomly got
         # ``You are not currently on a branch`` errors.  Somehow, this is related to
         # https://github.com/actions/checkout/issues/317
-        invokeGIT(['push', 'origin',  'HEAD:main'])
+        invokeGIT(['push', 'origin', 'HEAD:main'])
 
 
 class _PreparationStep(Step):
@@ -194,12 +194,12 @@ class _BuildStep(_MavenStep):
 
 class _GitHubReleaseStep(_MavenStep):
     '''Maven GitHub release step.'''
-    def _create_dev_tag(self):
+    def _prune_dev_tags(self):
         try:
-            invokeGIT(['fetch', '--prune', '--unshallow', '--tags'])
+            invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
         except InvokedProcessError:
             _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
-            invokeGIT(['fetch', '--prune', '--tags'])
+            invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
         tags = invokeGIT(['tag', '--list', '*SNAPSHOT*']).split('\n')
         for tag in tags:
             tag = tag.strip()
@@ -216,6 +216,24 @@ class _GitHubReleaseStep(_MavenStep):
                     ex.error.stderr.decode('utf-8'),
                 )
 
+    def _tag_release(self):
+        _logger.debug('🏷 Tagging the release')
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            _logger.debug('🕊 Cannot determine what tag we are currently on, so skipping re-tagging')
+            return
+        match = TAG_RE.match(tag)
+        if not match:
+            _logger.debug('🐎 Stable tag at «%s» but not a ``release/`` style tag, so skipping tagging', tag)
+            return
+        major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
+        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
+        tag = f'v{major}.{minor}.{micro}'
+        _logger.debug('🆕 New tag will be %s', tag)
+        invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
+        invokeGIT(['push', '--tags'])
+
     def execute(self):
         _logger.debug('maven-release release step')
 
@@ -228,13 +246,14 @@ class _GitHubReleaseStep(_MavenStep):
         # create new dev tag if build is successful
         _logger.debug('❗️ Before I run maven-release, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
-            for l in f:
-                if 'version' in l: _logger.debug(f'“{l.strip()}”')
+            for 𝐋 in f:
+                if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
 
+        self._prune_dev_tags()
         if not self.assembly.isStable():
-            self._create_dev_tag()
             invoke(['maven-release', '--snapshot', '--token', token])
         else:
+            self._tag_release()
             invoke(['maven-release', '--token', token])
 
 
@@ -242,8 +261,8 @@ class _ArtifactPublicationStep(_MavenStep):
     def execute(self):
         _logger.debug('❗️ Before I run `mvn deploy`, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
-            for l in f:
-                if 'version' in l: _logger.debug(f'“{l.strip()}”')
+            for 𝐋 in f:
+                if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
         if self.assembly.isStable():
             try:
                 args = ['--errors', '--activate-profiles', 'release']
@@ -284,21 +303,21 @@ class _VersionBumpingStep(_MavenStep):
             _logger.debug('Skipping version bump for unstable build')
             return
 
-        branch = invokeGIT(['branch', '--show-current']).strip()
-        if not branch:
-            raise RoundupError('🕊 Cannot determine what branch we are on so version bump fail')
-        match = BRANCH_RE.match(branch)
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            raise RoundupError('🕊 Cannot determine the release tag so version bump fail')
+        match = TAG_RE.match(tag)
         if not match:
-            raise RoundupError(f'🐎 Stable workflow on «{branch}» but not a ``release/`` branch!')
+            raise RoundupError(f'🐎 Stable workflow on tag «{tag}» but not a ``release/`` name!')
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         if micro is None:
-            raise RoundupError('Invalid release version supplied in branch. You must supply Major.Minor.Micro')
+            raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])
         _logger.debug('❗️ After I ran `mvn versions:set`, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
-            for l in f:
-                if 'version' in l: _logger.debug(f'“{l.strip()}”')
+            for 𝐋 in f:
+                if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
         self.commit_poms(f'Bumping version for {major}.{minor}.{micro} release')
 
 

@@ -45,7 +45,7 @@ This causes the Roundup to use OpenJDK 11 and also installs the `pdfgrep` packag
 
 #### ☕️ Java Note
 
-If you install an JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environment variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
+If you install a JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environment variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
 
 
 ### 👮‍♂️ GitHub Admin Token
@@ -112,6 +112,9 @@ There are several different flavors of roundups that you can specify `with` the 
 -   `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, etc. This is the default if you don't specify an assembly.
 -   `integration` — this is the same as the `unstable` PDS assembly, but omits the requirements generation and changelog generation steps.
 -   `noop` — this is an assembly that does nothing, i.e., "no operation".
+-   `env` — this is an assembly whose steps are defined by environment variables:
+    -   `ROUNDUP_STABLE` set to `1` or `true` for a stable assembly, unstable otherwise
+    -   `ROUNDUP_STEPS` set to a comam-separated list of step names to execute, such as `test,docs`
 
 
 ### 🛫 Releases

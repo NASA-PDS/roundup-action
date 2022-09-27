@@ -264,13 +264,9 @@ class _ArtifactPublicationStep(_MavenStep):
             for 𝐋 in f:
                 if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
         if self.assembly.isStable():
-            try:
-                args = ['--errors', '--activate-profiles', 'release']
-                args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
-                self.invokeMaven(args)
-            except InvokedProcessError as ipe:
-                _logger.error("Error while releasing on the artifactory %s", ipe)
-                _logger.info("let's assume it is because this version has already been released, and move on next step")
+            args = ['--errors', '--activate-profiles', 'release']
+            args.extend(self.assembly.context.args.maven_stable_artifact_phases.split(','))
+            self.invokeMaven(args)
         else:
             self.invokeMaven(self.assembly.context.args.maven_unstable_artifact_phases.split(','))
 

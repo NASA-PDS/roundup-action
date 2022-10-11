@@ -3,6 +3,7 @@
 '''🤠 PDS Roundup: A step takes you further towards a complete roundup'''
 
 from enum import Enum
+from .errors import InvokedProcessError
 from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE
 import logging, github3, tempfile, zipfile, os
 
@@ -86,11 +87,14 @@ class ChangeLogStep(Step):
         For NASA-PDS/roundup-action#29.
         '''
         _logger.debug('🏷 For changelog generation, figuring out the future release')
-
-        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
-        if not tag:
+        try:
+            tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+            if not tag:
+                raise RuntimeError
+        except (RuntimeError, InvokedProcessError):
             _logger.debug('🕊 Cannot determine what tag we are on for changelog future, so using «unknown»')
             return '«unknown»'
+
         match = TAG_RE.match(tag)
         if not match:
             _logger.debug('🐎 This is not a ``release/`` tag, so using «unknown»')

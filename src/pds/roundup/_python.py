@@ -275,6 +275,13 @@ class _CleanupStep(_PythonStep):
         if not self.assembly.isStable():
             _logger.debug('Skipping cleanup for unstable build')
             return
+
+        # NASA-PDS/roundup-action#99: delete the release/X.Y.Z tag
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            raise RoundupError('🏷 Cannot determine the release tag at cleanup step')
+        invokeGIT(['push', 'origin', f':{tag}'])
+
         detective = TextFileDetective(self.assembly.context.cwd)
         version, version_file = detective.detect(), detective.locate_file(self.assembly.context.cwd)
         if not version:

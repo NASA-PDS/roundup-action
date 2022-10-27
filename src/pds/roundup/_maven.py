@@ -321,9 +321,17 @@ class _CleanupStep(_MavenStep):
     '''Step that tidies up.'''
     def execute(self):
         _logger.debug('Maven cleanup step')
+
         if not self.assembly.isStable():
             _logger.debug('Skipping cleanup for unstable build')
             return
+
+        # NASA-PDS/roundup-action#99: delete the release/X.Y.Z tag
+        tag = invokeGIT(['describe', '--tags', '--abbrev=0', '--match', 'release/*']).strip()
+        if not tag:
+            raise RoundupError('🏷 Cannot determine the release tag at cleanup step')
+        invokeGIT(['push', 'origin', f':{tag}'])
+
         pomVersion = self.getVersionFromPOM()
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', pomVersion)
         if not match:

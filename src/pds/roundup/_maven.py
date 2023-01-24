@@ -4,8 +4,9 @@
 
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
-from .step import Step, StepName, NullStep, ChangeLogStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, TAG_RE, commit, git_config
+from .step import ChangeLogStep as BaseChangeLogStep
+from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
+from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -194,27 +195,17 @@ class _BuildStep(_MavenStep):
 
 class _GitHubReleaseStep(_MavenStep):
     '''Maven GitHub release step.'''
+
     def _prune_dev_tags(self):
-        try:
-            invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
-        except InvokedProcessError:
-            _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
-            invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
-        tags = invokeGIT(['tag', '--list', '*SNAPSHOT*']).split('\n')
-        for tag in tags:
-            tag = tag.strip()
-            if not tag: continue
-            try:
-                _logger.debug('␡ Attempting to delete tag %s', tag)
-                invokeGIT(['tag', '--delete', tag])
-                invokeGIT(['push', '--delete', 'origin', tag])
-            except InvokedProcessError as ex:
-                _logger.info(
-                    '🧐 Cannot delete tag %s, stdout=«%s», stderr=«%s»; but pressing on',
-                    tag,
-                    ex.error.stdout.decode('utf-8'),
-                    ex.error.stderr.decode('utf-8'),
-                )
+        '''Remove all ``SNAPSHOT`` tags.'''
+        delete_tags('*SNAPSHOT*')
+
+    def _prune_release_tags(self):
+        '''Remove all leftover ``release/`` tags that have accrued from older versions of Roundup Action.
+
+        This helps resolve roundup-action#104.
+        '''
+        delete_tags('release/*')
 
     def _tag_release(self):
         _logger.debug('🏷 Tagging the release')
@@ -252,7 +243,8 @@ class _GitHubReleaseStep(_MavenStep):
         self._prune_dev_tags()
         if not self.assembly.isStable():
             invoke(['maven-release', '--snapshot', '--token', token])
-        else:
+            self._prune_release_tags()
+        else:  # it's stable release
             self._tag_release()
             invoke(['maven-release', '--token', token])
 
@@ -342,3 +334,10 @@ class _CleanupStep(_MavenStep):
         _logger.debug('🔖 Setting version %s in the pom', newVersion)
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={newVersion}', 'versions:set'])
         self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
+
+
+class ChangeLogStep(BaseChangeLogStep):
+    def execute(self):
+        _logger.debug('Maven changelog step')
+        delete_tags('*SNAPSHOT*')
+        super().execute()

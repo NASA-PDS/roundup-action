@@ -3,12 +3,13 @@
 '''PDS Roundup: Python context'''
 
 from .context import Context
-from .errors import MissingEnvVarError
-from .step import Step, StepName, NullStep, ChangeLogStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, TAG_RE, commit
 from .errors import InvokedProcessError, RoundupError
-import logging, os, re, shutil
+from .errors import MissingEnvVarError
+from .step import ChangeLogStep as BaseChangeLogStep
+from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep
+from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags
 from pds_github_util.release._python_version import TextFileDetective
+import logging, os, re, shutil
 
 _logger = logging.getLogger(__name__)
 
@@ -164,32 +165,11 @@ class _GitHubReleaseStep(_PythonStep):
         '''Get rid of any "dev" tags. Apparently we want to do this always; see
         https://github.com/NASA-PDS/roundup-action/issues/32#issuecomment-776309904
         '''
-        _logger.debug('✂️ Pruning dev tags')
+        delete_tags('*dev*')
 
-        # First do an "unshallow" fetch, with tags, and getting rid of obsolete detritus.
-        # (Why they heck is it called "unshallow" when we have a perfectly good word for it in English: "deep"):
-        try:
-            invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
-        except InvokedProcessError:
-            # For a reason I can't fathom, the --unshallow (a/k/a "deep") fails, so let's just do it again
-            # without that option:
-            _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
-            invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
-
-        # Next, find all the tags with dev in their name and delete them
-        tags = invokeGIT(['tag', '--list', '*dev*']).split('\n')
-        for tag in tags:
-            tag = tag.strip()
-            if not tag: continue
-            try:
-                _logger.debug('␡ Attempting to delete tag %s', tag)
-                invokeGIT(['tag', '--delete', tag])
-                invokeGIT(['push', '--delete', 'origin', tag])
-            except InvokedProcessError as ex:
-                _logger.info(
-                    '🧐 Cannot delete tag %s, stdout=«%s», stderr=«%s»; but pressing on',
-                    tag, ex.error.stdout.decode('utf-8'), ex.error.stderr.decode('utf-8'),
-                )
+    def _pruneReleaseTags(self):
+        '''Get rid of ``release/*`` tags.'''
+        delete_tags('release/*')
 
     def _tagRelease(self):
         '''Tag the current release using the v1.2.3-style tag based on the release/1.2.3-style tag.'''
@@ -221,8 +201,9 @@ class _GitHubReleaseStep(_PythonStep):
         if self.assembly.isStable():
             self._tagRelease()
             invoke(['python-release', '--debug', '--token', token])
-        else:
+        else:  # It's unstable release
             invoke(['python-release', '--debug', '--snapshot', '--token', token])
+            self._pruneReleaseTags()
 
 
 class _ArtifactPublicationStep(_PythonStep):
@@ -298,3 +279,10 @@ class _CleanupStep(_PythonStep):
         with open(version_file, 'w') as f:
             f.write(f'{new_version}\n')
         commit(version_file, f'Setting next dev version to {major}.{minor}.{micro}')
+
+
+class ChangeLogStep(BaseChangeLogStep):
+    def execute(self):
+        _logger.debug('Python changelog step')
+        delete_tags('*dev*')
+        super().execute()

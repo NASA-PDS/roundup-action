@@ -113,6 +113,18 @@ def commit(filename, message):
     invokeGIT(['commit', '--allow-empty', '--message', message])
     # TODO: understand why a simple push does not work and make it work
     # see bug https://github.com/actions/checkout/issues/317
+    #
+    # NASA-PDS/roundup-action#98 … @jimmie suggests putting a `git pull` before the push.
+    # @jordanpadams says that he did see an issue where a push occurred during a Roundup.
+    # @nutjob4life maintains that a `git pull` at this point would result in `Already up
+    # to date` but we all guess it wouldn't hurt.
+    try:
+        _logger.info('WTF')
+        invokeGIT(['branch'])
+        invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat'])
+    except InvokedProcessError:
+        _logger.info('🔁 Pull before push to HEAD:main failed but pressing on')
+        pass
     invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
 
 
@@ -149,3 +161,27 @@ def contextFactories():
         'pom.xml':     MavenContext,
         'project.xml': MavenContext
     }
+
+
+def delete_tags(pattern):
+    '''Delete tags matching ``pattern``.'''
+    try:
+        invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
+    except InvokedProcessError:
+        _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
+        invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
+    tags = invokeGIT(['tag', '--list', pattern]).split('\n')
+    for tag in tags:
+        tag = tag.strip()
+        if not tag: continue
+        try:
+            _logger.debug('␡ Attempting to delete tag %s', tag)
+            invokeGIT(['tag', '--delete', tag])
+            invokeGIT(['push', '--delete', 'origin', tag])
+        except InvokedProcessError as ex:
+            _logger.info(
+                '🧐 Cannot delete tag %s, stdout=«%s», stderr=«%s»; but pressing on',
+                tag,
+                ex.error.stdout.decode('utf-8'),
+                ex.error.stderr.decode('utf-8'),
+            )

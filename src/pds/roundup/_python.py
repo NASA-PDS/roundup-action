@@ -13,6 +13,9 @@ import logging, os, re, shutil
 
 _logger = logging.getLogger(__name__)
 
+# This should match what's in github-actions-base (goodness, this is complex!)
+SPHINX_VERSION = '3.2.1'
+
 
 class PythonContext(Context):
     '''A Python context supports Python software proejcts'''
@@ -69,7 +72,7 @@ class _PreparationStep(_PythonStep):
         # Make sure we have the latest of pip+setuptools+wheel
         invoke(['pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
         # #79: ensure that the venv has its own ``sphinx-build``
-        invoke(['pip', 'install', '--quiet', '--ignore-installed', 'sphinx'])
+        invoke(['pip', 'install', '--quiet', '--ignore-installed', f'sphinx=={SPHINX_VERSION}'])
         # Now install the package being rounded up
         invoke(['pip', 'install', '--editable', '.[dev]'])
         # ☑️ TODO: what other prep steps are there? What about VERSION.txt overwriting?
@@ -99,7 +102,7 @@ class _IntegrationTestStep(_PythonStep):
 class _DocsStep(_PythonStep):
     '''A step that uses Sphinx to generate documentation'''
     def execute(self):
-        invoke(['sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
+        invoke(['/usr/local/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
 
 
 class _VersionBumpingStep(_PythonStep):
@@ -200,9 +203,9 @@ class _GitHubReleaseStep(_PythonStep):
         self._pruneDev()
         if self.assembly.isStable():
             self._tagRelease()
-            invoke(['python-release', '--debug', '--token', token])
+            invoke(['/usr/local/bin/python-release', '--debug', '--token', token])
         else:  # It's unstable release
-            invoke(['python-release', '--debug', '--snapshot', '--token', token])
+            invoke(['/usr/local/bin/python-release', '--debug', '--snapshot', '--token', token])
             self._pruneReleaseTags()
 
 
@@ -212,7 +215,7 @@ class _ArtifactPublicationStep(_PythonStep):
         # 😮 TODO: It'd be more secure to use PyPI access tokens instead of usernames and passwords!
 
         argv = [
-            'twine',
+            '/usr/local/bin/twine',
             'upload',
             '--username',
             self.getCheeseshopCredentials()[0],

@@ -92,7 +92,12 @@ def invokeGIT(gitArgs):
 
 
 def git_config():
-    '''Prepare necessary git configuration or else thing might fail'''
+    '''Prepare necessary git configuration or else things might fail'''
+
+    # Starting with git 2.36, we need to tell git our directory is safe to use
+    invokeGIT(['config', '--global', '--add', 'safe.directory', '/github/workspace'])
+
+    # And give the bot its credit
     invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
 

@@ -158,6 +158,7 @@ class _PreparationStep(Step):
 
     def execute(self):
         _logger.debug('Maven preparation step')
+        git_config()
         self._createSettingsXML()
         self._createKeyring()
 

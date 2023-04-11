@@ -7,7 +7,7 @@ from .errors import InvokedProcessError, RoundupError
 from .errors import MissingEnvVarError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags
+from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags, git_config
 from pds_github_util.release._python_version import TextFileDetective
 import logging, os, re, shutil
 
@@ -63,6 +63,7 @@ class _PreparationStep(_PythonStep):
     '''Prepare the python repository for action.'''
     def execute(self):
         _logger.debug('Python preparation step')
+        git_config()
         shutil.rmtree('venv', ignore_errors=True)
         # We add access to system site packages so that projects can save time if they need numpy, pandas, etc.
         invoke(['python', '-m', 'venv', '--system-site-packages', 'venv'])

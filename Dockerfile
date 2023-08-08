@@ -25,6 +25,6 @@ COPY       src/ ./src
 ENTRYPOINT ["/usr/local/bin/roundup"]
 
 RUN : &&\
-    pip install 'git+https://github.com/NASA-PDS/pds-github-util@stable#egg=pds_github_util' &&\
+    pip install 'lasso.releasers~=1.0.0' 'lasso.requirements~=1.0.0' &&\
     python3 setup.py install --optimize=2 &&\
     :

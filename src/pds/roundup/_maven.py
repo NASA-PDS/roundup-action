@@ -36,6 +36,7 @@ class MavenContext(Context):
             StepName.requirements:        RequirementsStep,
             StepName.unitTest:            _UnitTestStep,
             StepName.versionBump:         _VersionBumpingStep,
+            StepName.versionCommit:       _VersionCommittingStep,
         }
         super(MavenContext, self).__init__(cwd, environ, args)
 
@@ -307,7 +308,20 @@ class _VersionBumpingStep(_MavenStep):
         with open('pom.xml', 'r') as f:
             for 𝐋 in f:
                 if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
-        self.commit_poms(f'Bumping version for {major}.{minor}.{micro} release')
+
+
+class _VersionCommittingStep(_MavenStep):
+    '''Step that commits the new version, as needed.'''
+    def execute(self):
+        '''Commit the new version number.'''
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version commit for unstable build')
+            return
+        _logger.debug('❗️ Inside the _VersionCommittingStep, here is what the pom.xml looks like as far as <version>')
+        with open('pom.xml', 'r') as f:
+            for 𝐋 in f:
+                if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
+        self.commit_poms('Committing poms for stable release')
 
 
 class _CleanupStep(_MavenStep):

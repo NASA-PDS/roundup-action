@@ -34,6 +34,7 @@ class PythonContext(Context):
             StepName.requirements:        RequirementsStep,
             StepName.unitTest:            _UnitTestStep,
             StepName.versionBump:         _VersionBumpingStep,
+            StepName.versionCommit:       _VersionCommittingStep,
         }
         super(PythonContext, self).__init__(cwd, environ, args)
 
@@ -107,13 +108,7 @@ class _DocsStep(_PythonStep):
 
 
 class _VersionBumpingStep(_PythonStep):
-    ''''''
-    # Filter out directory paths with these in them when trying to find VERSION.txt
-    #
-    # We could constrain our search to ``src`` but some older PDS repositories—including our own
-    # ``pds-github-util``—don't use ``src`` 😩
-    _prune = re.compile(r'__pycache__|\.egg-info')
-
+    '''Bump the version but do not commit it (yet).'''
     def execute(self):
         if not self.assembly.isStable():
             _logger.debug('Skipping version bump for unstable build')
@@ -150,7 +145,25 @@ class _VersionBumpingStep(_PythonStep):
             with open(version_file, 'w') as inp:
                 inp.write(f'{major}.{minor}.{micro}\n')
 
-        commit(version_file, f'Bumping version for {major}.{minor}.{micro} release')
+
+class _VersionCommittingStep(_PythonStep):
+    '''Commit the bumped version.'''
+    def execute(self):
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version commit for unstable build')
+            return
+
+        _logger.debug("Locating VERSION.txt to commit")
+        try:
+            version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
+            if version_file is None:
+                raise RoundupError('Unable to locate VERSION.txt in repo. Version commit failed.')
+        except ValueError:
+            msg = 'Unable to locate ./src directory. Is your repository properly structured?'
+            _logger.debug(msg)
+            raise RoundupError(msg)
+
+        commit(version_file, f'Commiting {version_file} for stable release')
 
 
 class _BuildStep(_PythonStep):

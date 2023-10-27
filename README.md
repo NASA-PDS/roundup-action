@@ -121,12 +121,17 @@ There are several different flavors of roundups that you can specify `with` the 
 
 The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Java Template Repository](https://github.com/NASA-PDS/pds-template-repo-java) (historically called the "generic template") and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) (historically called the Python template) have the correct GitHub Actions workflows to support this. If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
 
-To make an offical release of software version `VERSION`, create a tag called `release/VERSION` and push it to GitHub. For example, to release version 2.0.17 of your software based on the latest `main`:
+To make an offical release of software version `VERSION`, create a tag called `release/VERSION` and push it to GitHub. For example, to release version 2.1.0 of your software based on the latest `main`:
 ```console
 $ git checkout main
 $ git pull
-$ git tag --annotate --message "Release of 2.0.17" release/2.0.17
-$ git push origin release/2.0.17
+$ git tag --annotate --message "Release of 2.1.0" release/2.1.0
+$ git push origin release/2.1.0
+```
+If a release fails, you can retry it under some circumstances (depending on where it failed) with an invocation like:
+```console
+$ git push --delete release/2.1.0
+$ git push origin release/2.1.0
 ```
 
 

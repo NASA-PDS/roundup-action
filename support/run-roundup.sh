@@ -48,7 +48,7 @@
 
 
 # Constantly
-defaultSteps="preparation,unitTest,integrationTest,changeLog,requirements,docs,versionBump,build,githubRelease,artifactPublication,docPublication,cleanup"
+defaultSteps="preparation,unitTest,integrationTest,changeLog,requirements,docs,versionBump,build,githubRelease,artifactPublication,docPublication,versionCommit,cleanup"
 
 # Check args
 if [ "$#" -lt 2 -o "$#" -gt 3 ]; then

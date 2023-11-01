@@ -74,6 +74,8 @@ class PDSAssembly(Assembly):
         StepName.changeLog,
         StepName.githubRelease,
         StepName.docPublication,
+        # NASA-PDS/roundup-action#124: split version bumping from version committing
+        StepName.versionCommit,
         StepName.cleanup,
     ]
 

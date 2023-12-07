@@ -112,8 +112,8 @@ def main():
 
     # Sanity check in GitHub Acions logs: show the version of ``pds-github-util`` by calling
     # ``--version`` on any one of its programs.
-    pdsGitHubUtilVersion = invoke(['maven-release', '--version']).strip()
-    _logger.info('🗺 The version of ``pds-github-util`` I shall be using: %s', pdsGitHubUtilVersion)
+    version = invoke(['pds-issues', '--version']).strip()
+    _logger.info('🗺 The version of ``lasso-issues`` I shall be using: %s', version)
 
     # Here we go daddy
     _assemblies[args.assembly](context).roundup()

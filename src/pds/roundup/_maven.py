@@ -6,7 +6,7 @@ from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags
+from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags, add_version_label_to_open_bugs
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -300,7 +300,9 @@ class _VersionBumpingStep(_MavenStep):
         if not match:
             raise RoundupError(f'🐎 Stable workflow on tag «{tag}» but not a ``release/`` name!')
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        full_version = f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
+        add_version_label_to_open_bugs(full_version)
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])

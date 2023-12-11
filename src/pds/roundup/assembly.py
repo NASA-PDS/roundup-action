@@ -59,7 +59,7 @@ class NoOpAssembly(Assembly):
 
 
 class PDSAssembly(Assembly):
-    '''The PDS-flavored assembly which has 9 different steps'''
+    '''The PDS-flavored assembly which has 13 different steps'''
     pdsSteps = [
         StepName.preparation,
         StepName.unitTest,

@@ -7,7 +7,7 @@ from .errors import InvokedProcessError, RoundupError
 from .errors import MissingEnvVarError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags, git_config
+from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags, git_config, add_version_label_to_open_bugs
 from lasso.releasers._python_version import TextFileDetective
 import logging, os, re, shutil
 
@@ -127,10 +127,13 @@ class _VersionBumpingStep(_PythonStep):
             raise RoundupError(f'🐎 Stable tag of «{tag}» but not a ``release/`` tag')
 
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        full_version = f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
+
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
 
+        add_version_label_to_open_bugs(full_version)
         _logger.debug("Locating VERSION.txt to update with new release version.")
         try:
             version_file = TextFileDetective.locate_file(self.assembly.context.cwd)

@@ -50,6 +50,7 @@ class StepName(Enum):
     requirements        = 'requirements'
     unitTest            = 'unitTest'
     versionBump         = 'versionBump'
+    versionCommit       = 'versionCommit'
 
 
 # Common Steps

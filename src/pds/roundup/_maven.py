@@ -6,7 +6,7 @@ from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags
+from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags, add_version_label_to_open_bugs
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -36,6 +36,7 @@ class MavenContext(Context):
             StepName.requirements:        RequirementsStep,
             StepName.unitTest:            _UnitTestStep,
             StepName.versionBump:         _VersionBumpingStep,
+            StepName.versionCommit:       _VersionCommittingStep,
         }
         super(MavenContext, self).__init__(cwd, environ, args)
 
@@ -299,7 +300,9 @@ class _VersionBumpingStep(_MavenStep):
         if not match:
             raise RoundupError(f'🐎 Stable workflow on tag «{tag}» but not a ``release/`` name!')
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        full_version = f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
+        add_version_label_to_open_bugs(full_version)
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
         self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])
@@ -307,7 +310,20 @@ class _VersionBumpingStep(_MavenStep):
         with open('pom.xml', 'r') as f:
             for 𝐋 in f:
                 if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
-        self.commit_poms(f'Bumping version for {major}.{minor}.{micro} release')
+
+
+class _VersionCommittingStep(_MavenStep):
+    '''Step that commits the new version, as needed.'''
+    def execute(self):
+        '''Commit the new version number.'''
+        if not self.assembly.isStable():
+            _logger.debug('Skipping version commit for unstable build')
+            return
+        _logger.debug('❗️ Inside the _VersionCommittingStep, here is what the pom.xml looks like as far as <version>')
+        with open('pom.xml', 'r') as f:
+            for 𝐋 in f:
+                if 'version' in 𝐋: _logger.debug(f'“{𝐋.strip()}”')
+        self.commit_poms('Committing poms for stable release')
 
 
 class _CleanupStep(_MavenStep):

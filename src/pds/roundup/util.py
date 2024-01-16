@@ -3,7 +3,8 @@
 '''🤠 PDS Roundup — Utilities'''
 
 from .errors import InvokedProcessError
-import subprocess, logging, re
+import subprocess, logging, re, os
+
 
 _logger = logging.getLogger(__name__)
 
@@ -40,6 +41,15 @@ def populateEnvVars(env):
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 
     return copy
+
+
+def add_version_label_to_open_bugs(version):
+    _logger.debug('Adding version label to open bugs')
+    owner, repo = os.getenv('GITHUB_REPOSITORY').split('/')
+    invoke([
+        'add-version-label-to-open-bugs', '--labelled-version', version,
+        '--token', os.getenv('ADMIN_GITHUB_TOKEN'), '--github-org', owner, '--github-repo', repo,
+    ])
 
 
 def invoke(argv):

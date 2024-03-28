@@ -170,11 +170,14 @@ def contextFactories():
     # of a plain Python context.
     from ._python import PythonContext
     from ._maven import MavenContext
+    from ._nodejs import NodeJSContext
     return {
-        'setup.cfg':   PythonContext,
-        'setup.py':    PythonContext,
-        'pom.xml':     MavenContext,
-        'project.xml': MavenContext
+        'setup.cfg':         PythonContext,
+        'setup.py':          PythonContext,
+        'pom.xml':           MavenContext,
+        'project.xml':       MavenContext,
+        'package.json':      NodeJSContext,
+        'package-lock.json': NodeJSContext
     }
 
 

@@ -1,6 +1,6 @@
 # 🤠 PDS Engineering Actions: Roundup
 
-This is an [action for GitHub](https://github.com/features/actions) that does a "roundup"; that is, continuous integration and continuous delivery of [PDS](https://pds.nasa.gov/) software. (Somehow we got started on this "Western" kind of terminology and dadgum, we're stickin' with it 🤠.)
+This is an [action for GitHub](https://github.com/features/actions) that does a "roundup"; that is, continuous integration of [PDS](https://pds.nasa.gov/) software. (Somehow we got started on this "Western" kind of terminology and dadgum, we're stickin' with it 🤠.)
 
 
 ## ℹ️ Using this Action
@@ -28,12 +28,13 @@ Depending on the roundup, you may also need the following environment variables:
 -   `pypi_password` — Password for `pypi_username`
 -   `ossrh_username` — Username to use for uploading a snapshot [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) artifact
 -   `ossrh_password` — Password for `ossrh_username`
+-   `NPMJS_COM_TOKEN` — Token for https://www.npmjs.com/ which must be a granular access token with read/write permission to the `@nasapds` scope
 -   `CODE_SIGNING_KEY` — GPG **private** key (base64 encoded) with which to sign artifacts
 
 
 ### 🍃 Environment
 
-The Roundup Action uses the [NASA-PDS](https://github.com/NASA-PDS) [Github Actions Base](https://github.com/NASA-PDS/github-actions-base) as its starting environment. As of the time of this writing, this is [Alpine Linux 3.12](https://www.alpinelinux.org), [Python 3.8.5](https://www.python.org/), and [Apache Maven 3.6.3](https://maven.apache.org/), which in turns gives you [OpenJDK 1.8.0_252](https://openjdk.java.net/) (with `JAVA_HOME` defaulting to `/usr/lib/jvm/default-jvm`).
+The Roundup Action uses the [NASA-PDS](https://github.com/NASA-PDS) [Github Actions Base](https://github.com/NASA-PDS/github-actions-base) as its starting environment. As of the time of this writing, this is [Alpine Linux 3.16](https://www.alpinelinux.org), [Python 3.9.16](https://www.python.org/), [npm 8.10.0](https://www.npmjs.com/) and [Apache Maven 3.8.5](https://maven.apache.org/), which in turns gives you [OpenJDK 17.0.10_p7](https://openjdk.java.net/) (with `JAVA_HOME` defaulting to `/usr/lib/jvm/default-jvm`).
 
 If you need a newer or older Java, or any other packages present in order to complete the unit tests, build, documentation, etc., steps of your roundup, you can use the `packages` variable to specify additional [Alpine Linux Packages](https://pkgs.alpinelinux.org/packages) that will be installed prior to starting. For example:
 
@@ -45,7 +46,7 @@ This causes the Roundup to use OpenJDK 11 and also installs the `pdfgrep` packag
 
 #### ☕️ Java Note
 
-If you install a JDK older than OpenJDK 1.8.0_252, you may need to also set the `JAVA_HOME` environment variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
+If you install a JDK older than OpenJDK 17.0.10_p7, you may need to also set the `JAVA_HOME` environment variable, as the default `/usr/lib/jvm/default-jvm` will point to the newest.
 
 
 ### 👮‍♂️ GitHub Admin Token
@@ -79,11 +80,11 @@ You can now (and _should_) destroy any saved copies of the token's hex string.
 
 ### 🔑 Code Signing Key
 
-Signing code artifacts helps ensure that the code is not just created by who we say created it but that it's unmodified and free from inserted hacks like trojans or viruses. (Of course, it says nothing about the code's _quality_, which may be questionable or could itself _be_ a trojan or virus.) The Roundup uses the code signing key to automatically make these assertions by signing code artifacts it sends to the [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) (in the future, we could also sign Python artifacts sent to the [PyPI](https://pypi.org/)).
+Signing code artifacts helps ensure that the code is not just created by who we say created it but that it's unmodified and free from inserted hacks like trojans or viruses. (Of course, it says nothing about the code's _quality_, which may be questionable or could itself _be_ a trojan or virus.) The Roundup uses the code signing key to automatically make these assertions by signing code artifacts it sends to the [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) (in the future, we could also sign Python artifacts sent to the [PyPI](https://pypi.org/)) or [npmjs.com](https://www.npmjs.com/).
 
 The [NASA-PDS](https://github.com/NASA-PDS) organization includes a `CODE_SIGNING_KEY` that all repositories within it inherit.
 
-**📒 Note:** Whether _automatically signing artifacts_ is a safe practice is left for future discussion! 😩
+**📒 Note:** Whether _automatically signing artifacts_ is a safe practice is left for future discussion! 🤔
 
 To set up a your own code signing key for the Roundup action, first create an OpenPGP-compatible key pair using ``gpg`` or similar tool; for example, with [GnuPG 2.2](https://www.gnupg.org/), run ``gpg --full-generate-key``:
 
@@ -108,8 +109,8 @@ This puts the encoded private key onto your pasteboard, ready for pasting into G
 
 There are several different flavors of roundups that you can specify `with` the `assembly` parameter in your workflow. The flavor of assembly tells if you're doing a stable versus an unstable software release and what steps of the roundup to perform. They are as follows:
 
--   `stable` — this is the "standard" PDS assembly for stable software releases. It does the steps of unit testing, integration testing, documentation generation, software building, artifact publication, requirements generation, changelog generation, GitHub releasing, and documentation publication. Because it's a "stable" assembly, it sends all this to production servers; that means non-SNAPSHOT releases to OSSRH for Maven artifacts, the production PyPI for Python artifacts, etc.
--   `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, etc. This is the default if you don't specify an assembly.
+-   `stable` — this is the "standard" PDS assembly for stable software releases. It does the steps of unit testing, integration testing, documentation generation, software building, artifact publication, requirements generation, changelog generation, GitHub releasing, and documentation publication. Because it's a "stable" assembly, it sends all this to production servers; that means non-SNAPSHOT releases to OSSRH for Maven artifacts, the production PyPI for Python artifacts, or just sends the release to npmjs.com (which differentiates stable versus unstable with a suffix on the version number).
+-   `unstable` — this is the same as the `stable` PDS assembly but for unstable software releases. It does all the same steps as the stable assembly, but OSSRH artifacts are marked as `SNAPSHOT`s, the `test.pypi.org` is used instead of `pypi.org`, or a version like `1.2.3-unstable` for npm.js artifacts. This is the default if you don't specify an assembly.
 -   `integration` — this is the same as the `unstable` PDS assembly, but omits the requirements generation and changelog generation steps.
 -   `noop` — this is an assembly that does nothing, i.e., "no operation".
 -   `env` — this is an assembly whose steps are defined by environment variables:
@@ -119,7 +120,7 @@ There are several different flavors of roundups that you can specify `with` the 
 
 ### 🛫 Releases
 
-The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Java Template Repository](https://github.com/NASA-PDS/pds-template-repo-java) (historically called the "generic template") and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) (historically called the Python template) have the correct GitHub Actions workflows to support this. If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
+The Roundup includes built-in support to make official releases of software, publishing artifacts to well-known repositories, and including release archives on GitHub. The [PDS Java Template Repository](https://github.com/NASA-PDS/pds-template-repo-java) (historically called the "generic template") and the [PDS Python Template Repository](https://github.com/NASA-PDS/pds-template-repo-python) (historically called the Python template) have the correct GitHub Actions workflows to support this. So does the [Node.js template](https://github.com/NASA-PDS/template-repo-nodejs). If you create a new PDS repository from those templates, you're all set to roundup! Yee-haw!
 
 To make an offical release of software version `VERSION`, create a tag called `release/VERSION` and push it to GitHub. For example, to release version 2.1.0 of your software based on the latest `main`:
 ```console

@@ -27,5 +27,5 @@ ENTRYPOINT ["/usr/local/bin/roundup"]
 RUN : &&\
     pip install 'lasso.releasers~=1.0.0' 'lasso.requirements~=1.0.0' &&\
     pip install 'lasso-issues~=1.3.1' &&\
-    pip install install /usr/src/roundup &&\
+    pip install /usr/src/roundup &&\
     :

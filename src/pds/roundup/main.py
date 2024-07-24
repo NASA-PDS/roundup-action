@@ -52,11 +52,11 @@ def _parseArgs():
     # Maven 😩
     group = parser.add_argument_group('Maven phases (or goals), comma-separated')
     group.add_argument('--maven-test-phases', help='🩺 Test (%(default)s)', default='test')
-    group.add_argument('--maven-doc-phases', help='📚 Documentation (%(default)s)', default='package,site,site:stage')
-    group.add_argument('--maven-build-phases', help='👷‍ Build (%(default)s)', default='compile')
+    group.add_argument('--maven-doc-phases', help='📚 Documentation (%(default)s)', default='clean,site,site:stage')
+    group.add_argument('--maven-build-phases', help='👷‍ Build (%(default)s)', default='install')
     group.add_argument(
         '--maven-stable-artifact-phases',
-        help='😌 Stable artifacts (%(default)s)', default='clean,package,site,deploy'
+        help='😌 Stable artifacts (%(default)s)', default='clean,site,site:stage,deploy'
     )
     group.add_argument(
         '--maven-unstable-artifact-phases',

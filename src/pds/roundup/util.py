@@ -116,7 +116,7 @@ def git_pull():
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
     git_config()
-    invokeGIT(['pull', 'origin', 'main'])
+    invokeGIT(['pull', '--ff-only', 'origin', 'main'])
 
 
 def commit(filename, message):

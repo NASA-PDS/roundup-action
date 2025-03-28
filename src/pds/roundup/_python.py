@@ -8,13 +8,10 @@ from .errors import MissingEnvVarError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep
 from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags, git_config, add_version_label_to_open_bugs
-from lasso.releasers._python_version import TextFileDetective
+from ._detectives import TextFileDetective
 import logging, os, re, shutil
 
 _logger = logging.getLogger(__name__)
-
-# This should match what's in github-actions-base (goodness, this is complex!)
-SPHINX_VERSION = '3.2.1'
 
 
 class PythonContext(Context):
@@ -63,7 +60,6 @@ class _PythonStep(Step):
 class _PreparationStep(_PythonStep):
     '''Prepare the python repository for action.'''
     def execute(self):
-        _logger.debug('Python preparation step')
         git_config()
         shutil.rmtree('venv', ignore_errors=True)
         # We add access to system site packages so that projects can save time if they need numpy, pandas, etc.
@@ -72,11 +68,10 @@ class _PreparationStep(_PythonStep):
         venvBin = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin'))
         os.environ['PATH'] = f'{venvBin}:{os.environ["PATH"]}'
         # Make sure we have the latest of pip+setuptools+wheel
-        invoke(['pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
-        # #79: ensure that the venv has its own ``sphinx-build``
-        invoke(['pip', 'install', '--quiet', '--ignore-installed', f'sphinx=={SPHINX_VERSION}'])
-        # Now install the package being rounded up
-        invoke(['pip', 'install', '--editable', '.[dev]'])
+        invoke(['/github/workspace/venv/bin/pip', 'install', '--quiet', '--upgrade', 'pip', 'setuptools', 'wheel'])
+        # Now install the package being rounded up … it should install its own sphinx-build, but if
+        # not we'll use our own older version (3.2.1 according to github-actions-base)
+        invoke(['/github/workspace/venv/bin/pip', 'install', '--verbose', '--editable', '.[dev]'])
         # ☑️ TODO: what other prep steps are there? What about VERSION.txt overwriting?
 
 
@@ -104,7 +99,17 @@ class _IntegrationTestStep(_PythonStep):
 class _DocsStep(_PythonStep):
     '''A step that uses Sphinx to generate documentation'''
     def execute(self):
-        invoke(['/usr/local/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
+        try:
+            _logger.info('🫣  About to do `/github/workspace/venv/bin/sphinx-build`')
+            invoke(['/github/workspace/venv/bin/sphinx-build', '--version'])
+            invoke(['/github/workspace/venv/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
+        except InvokedProcessError as ex:
+            _logger.info('🫣  Got an InvokedProcessError %r, so doing /usr/local/bin/sphinx-build', ex)
+            try:
+                invoke(['/usr/local/bin/sphinx-build', '--version'])
+                invoke(['/usr/local/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
+            except InvokedProcessError:
+                _logger.exception('🚫🐈 Could not execute either kind of sphinx-build, so carrying on')
 
 
 class _VersionBumpingStep(_PythonStep):
@@ -231,6 +236,8 @@ class _ArtifactPublicationStep(_PythonStep):
     def execute(self):
         # 😮 TODO: It'd be more secure to use PyPI access tokens instead of usernames and passwords!
 
+        _logger.info('❓ Just what version of twine is this?')
+        invoke(['/usr/local/bin/twine', '--version'])
         argv = [
             '/usr/local/bin/twine',
             'upload',

@@ -44,12 +44,16 @@ def populateEnvVars(env):
 
 
 def add_version_label_to_open_bugs(version):
-    _logger.debug('Adding version label to open bugs')
-    owner, repo = os.getenv('GITHUB_REPOSITORY').split('/')
-    invoke([
-        'add-version-label-to-open-bugs', '--labelled-version', version,
-        '--token', os.getenv('ADMIN_GITHUB_TOKEN'), '--github-org', owner, '--github-repo', repo,
-    ])
+    _logger.info('Per NASA-PDS/roundup-action#145 we are no longer adding a version label to open bugs')
+    # The rest of this function is commented out for NASA-PDS/roundup-action#145; it remains
+    # for posterity:
+    #
+    # _logger.debug('Adding version label to open bugs')
+    # owner, repo = os.getenv('GITHUB_REPOSITORY').split('/')
+    # invoke([
+    #     'add-version-label-to-open-bugs', '--labelled-version', version,
+    #     '--token', os.getenv('ADMIN_GITHUB_TOKEN'), '--github-org', owner, '--github-repo', repo,
+    # ])
 
 
 def invoke(argv):

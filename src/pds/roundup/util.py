@@ -24,17 +24,17 @@ def populateEnvVars(env):
     required by a roundup. Return a copy of this modified mapping. Note that we may also log
     some warning messages if certain expected variables are missing.
     '''
-    copy                   = dict(env)
-    pypi_username          = copy.get('pypi_username', 'pypi')
-    pypi_password          = copy.get('pypi_password', 'secret')
-    ossrh_username         = copy.get('ossrh_username', 'ossrh')
-    ossrh_password         = copy.get('ossrh_password', 'secret')
-    java_home              = copy.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
-    copy['pypi_username']  = pypi_username
-    copy['pypi_password']  = pypi_password
-    copy['ossrh_username'] = ossrh_username
-    copy['ossrh_password'] = ossrh_password
-    copy['JAVA_HOME']      = java_home
+    copy                            = dict(env)
+    pypi_username                   = copy.get('pypi_username', 'pypi')
+    pypi_password                   = copy.get('pypi_password', 'secret')
+    central_portal_username         = copy.get('central_portal_username', 'ossrh')
+    central_portal_token            = copy.get('central_portal_token', 'secret')
+    java_home                       = copy.get('JAVA_HOME', '/usr/lib/jvm/default-jvm')
+    copy['pypi_username']           = pypi_username
+    copy['pypi_password']           = pypi_password
+    copy['central_portal_username'] = central_portal_username
+    copy['central_portal_token']    = central_portal_token
+    copy['JAVA_HOME']               = java_home
 
     for var in ('GITHUB_REPOSITORY',):  # List other important vars here
         if var not in env:

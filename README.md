@@ -26,10 +26,12 @@ Depending on the roundup, you may also need the following environment variables:
 
 -   `pypi_username` — Username to use when registering a Python package
 -   `pypi_password` — Password for `pypi_username`
--   `ossrh_username` — Username to use for uploading a snapshot [OSSRH](https://central.sonatype.org/pages/ossrh-guide.html) artifact
--   `ossrh_password` — Password for `ossrh_username`
+-   `central_portal_username` — Username to use for uploading artifacts to the [Maven Central Repository](https://central.sonatype.org/faq/what-is-different-between-central-portal-and-legacy-ossrh/#authentication) 
+-   `central_portal_token` — The token that goes with the `central_portal_username`
 -   `NPMJS_COM_TOKEN` — Token for https://www.npmjs.com/ which must be a granular access token with read/write permission to the `@nasapds` scope
 -   `CODE_SIGNING_KEY` — GPG **private** key (base64 encoded) with which to sign artifacts
+
+📒 **Note:** We've migrated from using the Maven OSSRH to the new Maven Central Portal. The older variables, `ossrh_username` and `ossrh_password` no longer are used.
 
 
 ### 🍃 Environment
@@ -171,11 +173,11 @@ jobs:
                     packages: cowpoke,chili-sort,lasso
                 env:
                     ADMIN_GITHUB_TOKEN: ${{secrets.pat}}
-                    CODE_SIGNING_KEY:   ${{secrets.CODE_SIGNING_KEY}}
-                    ossrh_username:     jocowboy
-                    ossrh_password:     ${{secrets.OSSRH_PASSWORD}}
-                    pypi_username:      snakewrangler
-                    pypi_password:      ${{secrets.PYPI_PASSWORD}}
+                    CODE_SIGNING_KEY: ${{secrets.CODE_SIGNING_KEY}}
+                    central_portal_username: jocowboy
+                    central_portal_token: ${{secrets.CENTRAL_PORTAL_TOKEN}}
+                    pypi_username: snakewrangler
+                    pypi_password: ${{secrets.PYPI_PASSWORD}}
 ```
 
 
@@ -204,8 +206,8 @@ But you could also invoke it the way GitHub Actions does; for example:
         --env ADMIN_GITHUB_TOKEN=$(cat my-dev-token.txt) \
         --env pypi_username=joe_cowboy4life \
         --env pypi_password=s3cr3t \
-        --env ossrh_username=java_cowboy4life \
-        --env ossrh_password=m0rec0ff33 \
+        --env central_portal_username=java_cowboy4life \
+        --env central_portal_token=m0rec0ff33 \
         --env GITHUB_REPOSITORY=joecowboy/test-repo \
         --volume /Users/joe/Documents/Development/test-repo:"/github/workspace" \
         pds-roundup --debug --assembly unstable

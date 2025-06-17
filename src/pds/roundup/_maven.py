@@ -105,8 +105,9 @@ class _PreparationStep(Step):
         _logger.info('✍️ Writing Maven settings to %s', settings)
 
         env, creds = self.assembly.context.environ, {}
-        for var in ('username', 'password'):
-            varName = 'ossrh_' + var
+
+        for var in ('username', 'token'):
+            varName = 'central_portal_' + var
             value = env.get(varName)
             if not value: raise MissingEnvVarError(varName)
             creds[var] = value

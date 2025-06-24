@@ -126,7 +126,7 @@ class _PreparationStep(Step):
         root.append(servers)
         server = etree.Element(prefix + 'server')
         servers.append(server)
-        etree.SubElement(server, prefix + 'id').text = 'ossrh'
+        etree.SubElement(server, prefix + 'id').text = 'central'
         etree.SubElement(server, prefix + 'username').text = creds['username']
         etree.SubElement(server, prefix + 'password').text = creds['token']
         profiles = etree.Element(prefix + 'profiles')

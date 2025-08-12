@@ -82,7 +82,7 @@ class _UnitTestStep(_PythonStep):
         tox = os.path.abspath(os.path.join(self.assembly.context.cwd, 'venv', 'bin', 'tox'))
         if os.path.isfile(tox):
             _logger.debug('Trying the new way: ``tox``')
-            invoke([tox, '-e', 'py39'])  # ``py39`` = unit tests
+            invoke([tox])
         else:
             _logger.debug('Trying the old way: ``setup.py test``')
             invoke(['python', 'setup.py', 'test'])
@@ -103,8 +103,13 @@ class _DocsStep(_PythonStep):
             _logger.info('🫣  About to do `/github/workspace/venv/bin/sphinx-build`')
             invoke(['/github/workspace/venv/bin/sphinx-build', '--version'])
             invoke(['/github/workspace/venv/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
-        except InvokedProcessError as ex:
-            _logger.info('🫣  Got an InvokedProcessError %r, so doing /usr/local/bin/sphinx-build', ex)
+        except (InvokedProcessError, FileNotFoundError) as ex:
+            # For some reason, my test repo install a sphinx-build (and all its brethren) in the venv,
+            # but not under the Roundup Action
+            _logger.info('🫣  Got a %r error, so doing /usr/local/bin/sphinx-build', ex)
+            _logger.info('🥸 by the way here is what is in the venv bin')
+            invoke(['ls', '-l', '/github/workspace/venv/bin'])
+            _logger.info('🥸 GOT THAT? Now onto /usr/local/bin/sphinx-build')
             try:
                 invoke(['/usr/local/bin/sphinx-build', '--version'])
                 invoke(['/usr/local/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])

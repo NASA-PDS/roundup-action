@@ -17,9 +17,9 @@ LABEL "com.github.actions.name"="PDS Roundup"
 # ----------------------
 
 ENV PYTHONUNBUFFERED=1
-ENV lasso_releasers=1.0.1
-ENV lasso_requirements=1.0.0
-ENV lasso_issues=1.3.1
+ENV lasso_releasers=1.2.0
+ENV lasso_requirements=1.1.0
+ENV lasso_issues=1.4.0
 
 
 # Image Details
@@ -35,10 +35,7 @@ RUN : &&\
     : &&\
     : First up, lasso.releasers &&\
     python3 -m venv --system-site-packages /usr/src/rel &&\
-    : Normally we would use lasso.releasers~=${lasso_releasers} but we are transitioning Python 3.13 &&\
-    : should be → /usr/src/rel/bin/pip install --quiet lasso.releasers~=${lasso_releasers} ← &&\
-    : so do this for now: &&\
-    /usr/src/rel/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-releasers.git@python3.13 &&\
+    /usr/src/rel/bin/pip install --quiet lasso.releasers~=${lasso_releasers} &&\
     ln -s /usr/src/rel/bin/maven-release /usr/local/bin &&\
     ln -s /usr/src/rel/bin/nodejs-release /usr/local/bin &&\
     ln -s /usr/src/rel/bin/python-release /usr/local/bin &&\
@@ -48,17 +45,13 @@ RUN : &&\
     : because Sphinx 8.2.3 in the base image requires packaging ≥ 23.0 and lasso-requirements needs packaging ≅ 20.9 &&\
     python3 -m venv /usr/src/req &&\
     /usr/src/req/bin/pip install --quiet --upgrade pip &&\
-    : Normally we would use lasso-requirements~=${lasso_requirements} but we are transitioning Python 3.13 &&\
-    : should be → /usr/src/req/bin/pip install --quiet lasso-requirements~=${lasso_requirements} ← &&\
-    : so do this for now: &&\
+    /usr/src/req/bin/pip install --quiet lasso-requirements~=${lasso_requirements} &&\
     /usr/src/req/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-requirements.git@python3.13 &&\
     ln -s /usr/src/req/bin/requirement-report /usr/local/bin &&\
     : &&\
     : Now lasso.issues &&\
     python3 -m venv /usr/src/iss &&\
-    : Normally we would use lasso.issues~=${lasso_issues} but we are transitioning Python 3.13 &&\
-    : should be → /usr/src/iss/bin/pip install --quiet lasso.issues~=${lasso_issues} ← &&\
-    : so do this for now: &&\
+    /usr/src/iss/bin/pip install --quiet lasso.issues~=${lasso_issues} &&\
     /usr/src/iss/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-issues.git@python3.13 &&\
     ln -s /usr/src/iss/bin/add-version-label-to-open-bugs /usr/local/bin &&\
     ln -s /usr/src/iss/bin/milestones /usr/local/bin &&\

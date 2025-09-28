@@ -223,8 +223,10 @@ class _GitHubReleaseStep(_MavenStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
-        tag = f'v{major}.{minor}.{micro}'
-        _logger.debug('🆕 New tag will be %s', tag)
+        tag, pom_version = f'v{major}.{minor}.{micro}', f'{major}.{minor}.{micro}'
+        _logger.debug('🆕 New GitHub tag will be %s and pom version will be %s', tag, pom_version)
+        self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])
+        self.commit_poms(f'Stable release {pom_version} in poms')
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
         invokeGIT(['push', '--tags'])
 

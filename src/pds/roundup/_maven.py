@@ -17,6 +17,8 @@ _mavenSettingsNamespace = 'http://maven.apache.org/SETTINGS/1.0.0'
 _xsiNamespace = 'http://www.w3.org/2001/XMLSchema-instance'
 _mavenXSDLocation = 'https://maven.apache.org/xsd/settings-1.0.0.xsd'
 _homeDir = '/root' if os.getenv('GITHUB_ACTIONS', 'true') == 'true' else os.getenv('HOME')
+_backupPomsFlag = '-DgenerateBackupPoms=false'
+_mavenVersionSetCommand = 'versions:set'
 
 
 class MavenContext(Context):
@@ -223,8 +225,10 @@ class _GitHubReleaseStep(_MavenStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
         # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
-        tag = f'v{major}.{minor}.{micro}'
-        _logger.debug('🆕 New tag will be %s', tag)
+        tag, pom_version = f'v{major}.{minor}.{micro}', f'{major}.{minor}.{micro}'
+        _logger.debug('🆕 New GitHub tag will be %s and pom version will be %s', tag, pom_version)
+        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={major}.{minor}.{micro}', _mavenVersionSetCommand])
+        self.commit_poms(f'Stable release {pom_version} in poms')
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
         invokeGIT(['push', '--tags'])
 
@@ -306,7 +310,7 @@ class _VersionBumpingStep(_MavenStep):
         add_version_label_to_open_bugs(full_version)
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
-        self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={major}.{minor}.{micro}', 'versions:set'])
+        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={major}.{minor}.{micro}', _mavenVersionSetCommand])
         _logger.debug('❗️ After I ran `mvn versions:set`, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
             for 𝐋 in f:
@@ -350,7 +354,7 @@ class _CleanupStep(_MavenStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         newVersion = f'{major}.{minor}.0-SNAPSHOT'
         _logger.debug('🔖 Setting version %s in the pom', newVersion)
-        self.invokeMaven(['-DgenerateBackupPoms=false', f'-DnewVersion={newVersion}', 'versions:set'])
+        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])
         self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
 
 

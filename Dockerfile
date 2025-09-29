@@ -35,7 +35,9 @@ RUN : &&\
     : &&\
     : First up, lasso.releasers &&\
     python3 -m venv --system-site-packages /usr/src/rel &&\
-    /usr/src/rel/bin/pip install --quiet lasso.releasers~=${lasso_releasers} &&\
+    : For roundup-action 155, commenting this out and installing from github &&\
+    : /usr/src/rel/bin/pip install --quiet lasso.releasers~=${lasso_releasers} &&\
+    /usr/src/rel/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-releasers.git@roundup-action-155 &&\
     ln -s /usr/src/rel/bin/maven-release /usr/local/bin &&\
     ln -s /usr/src/rel/bin/nodejs-release /usr/local/bin &&\
     ln -s /usr/src/rel/bin/python-release /usr/local/bin &&\

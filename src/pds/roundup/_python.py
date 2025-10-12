@@ -99,22 +99,15 @@ class _IntegrationTestStep(_PythonStep):
 class _DocsStep(_PythonStep):
     '''A step that uses Sphinx to generate documentation'''
     def execute(self):
-        try:
-            _logger.info('🫣  About to do `/github/workspace/venv/bin/sphinx-build`')
-            invoke(['/github/workspace/venv/bin/sphinx-build', '--version'])
-            invoke(['/github/workspace/venv/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
-        except (InvokedProcessError, FileNotFoundError) as ex:
-            # For some reason, my test repo install a sphinx-build (and all its brethren) in the venv,
-            # but not under the Roundup Action
-            _logger.info('🫣  Got a %r error, so doing /usr/local/bin/sphinx-build', ex)
-            _logger.info('🥸 by the way here is what is in the venv bin')
-            invoke(['ls', '-l', '/github/workspace/venv/bin'])
-            _logger.info('🥸 GOT THAT? Now onto /usr/local/bin/sphinx-build')
-            try:
-                invoke(['/usr/local/bin/sphinx-build', '--version'])
-                invoke(['/usr/local/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', 'docs/build'])
-            except InvokedProcessError:
-                _logger.exception('🚫🐈 Could not execute either kind of sphinx-build, so carrying on')
+        _logger.info('📜 Documentation generation which relies on sphinx-build installed in the venv')
+        _logger.debug('📜 by the way here is what is in the venv bin')
+        invoke(['ls', '-l', '/github/workspace/venv/bin'])
+        _logger.debug('📜 GOT THAT? Now onto /github/workspace/venv/bin/sphinx-build')
+        invoke(['/github/workspace/venv/bin/sphinx-build', '--version'])
+        invoke(['/github/workspace/venv/bin/sphinx-build', '-a', '-b', 'html', 'docs/source', '/tmp/docs'])
+        _logger.debug('📜 Documentation generated successfully; here is /tmp/docs')
+        invoke(['ls', '-l', '/tmp/docs'])
+        _logger.debug('📜 GOT THAT? This step is now done.')
 
 
 class _VersionBumpingStep(_PythonStep):
@@ -274,8 +267,7 @@ class _ArtifactPublicationStep(_PythonStep):
 
 
 class _DocPublicationStep(DocPublicationStep):
-
-    default_documentation_dir = 'docs/build'
+    default_documentation_dir = '/tmp/docs'
 
 
 class _CleanupStep(_PythonStep):

@@ -47,7 +47,7 @@ RUN : &&\
     : Next, lasso.requirements &&\
     python3 -m venv /usr/src/req &&\
     /usr/src/req/bin/pip install --quiet --upgrade pip &&\
-    : The lasso-requirements-1.1.0 in PyPI has bug in that it treats Python releases with Java -SNAPSHOT versions &&\
+    : The lasso-requirements-1.1.0 in PyPI has a bug in that it treats Python releases with Java -SNAPSHOT versions &&\
     : So we will use the tagged version from GitHub for now &&\
     : /usr/src/req/bin/pip install --quiet lasso-requirements~=${lasso_requirements} &&\
     /usr/src/req/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-requirements.git@python3.13 &&\

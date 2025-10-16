@@ -4,7 +4,7 @@
 # Note: the github-actions-base image's `stable` tag should eventually be
 # on Python 3.13, but for now the image tagged `python3.13` will do fine.
 
-FROM nasapds/github-actions-base:python3.13
+FROM nasapds/github-actions-base:no-sphinx
 
 
 # Metadata
@@ -36,6 +36,7 @@ RUN : &&\
     : First up, lasso.releasers &&\
     python3 -m venv --system-site-packages /usr/src/rel &&\
     : For roundup-action 155, commenting this out and installing from github &&\
+    : Reminder: we need to cut a new release of lasso.releasers some day &&\
     : /usr/src/rel/bin/pip install --quiet lasso.releasers~=${lasso_releasers} &&\
     /usr/src/rel/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-releasers.git@roundup-action-155 &&\
     ln -s /usr/src/rel/bin/maven-release /usr/local/bin &&\
@@ -43,18 +44,18 @@ RUN : &&\
     ln -s /usr/src/rel/bin/python-release /usr/local/bin &&\
     ln -s /usr/src/rel/bin/snapshot-release /usr/local/bin &&\
     : &&\
-    : Next, lasso.requirements, which for some reason needs an upgraded pip AND ALSO cannot use system-site-packages &&\
-    : because Sphinx 8.2.3 in the base image requires packaging ≥ 23.0 and lasso-requirements needs packaging ≅ 20.9 &&\
+    : Next, lasso.requirements &&\
     python3 -m venv /usr/src/req &&\
     /usr/src/req/bin/pip install --quiet --upgrade pip &&\
-    /usr/src/req/bin/pip install --quiet lasso-requirements~=${lasso_requirements} &&\
+    : The lasso-requirements-1.1.0 in PyPI has a bug in that it treats Python releases with Java -SNAPSHOT versions &&\
+    : So we will use the tagged version from GitHub for now &&\
+    : /usr/src/req/bin/pip install --quiet lasso-requirements~=${lasso_requirements} &&\
     /usr/src/req/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-requirements.git@python3.13 &&\
     ln -s /usr/src/req/bin/requirement-report /usr/local/bin &&\
     : &&\
     : Now lasso.issues &&\
     python3 -m venv /usr/src/iss &&\
     /usr/src/iss/bin/pip install --quiet lasso.issues~=${lasso_issues} &&\
-    /usr/src/iss/bin/pip install --quiet git+https://github.com/NASA-pds/lasso-issues.git@python3.13 &&\
     ln -s /usr/src/iss/bin/add-version-label-to-open-bugs /usr/local/bin &&\
     ln -s /usr/src/iss/bin/milestones /usr/local/bin &&\
     ln -s /usr/src/iss/bin/move-issues /usr/local/bin &&\

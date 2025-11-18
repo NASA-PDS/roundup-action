@@ -40,6 +40,11 @@ def populateEnvVars(env):
         if var not in env:
             _logger.warn('⚠️ «%s» not found in environment; some steps may fail', var)
 
+    # NASA-PDS/roundup-action#160 — ensure the GITHUB_REF_NAME environment variable is set
+    # and if missing, use the reasonable default of `main``. This is provided to all Steps
+    # via the Context object.
+    copy['GITHUB_REF_NAME'] = env.get('GITHUB_REF_NAME', 'main')
+
     return copy
 
 
@@ -120,7 +125,9 @@ def git_pull():
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
     git_config()
-    invokeGIT(['pull', 'origin', 'main'])
+    # NASA-PDS/roundup-action#160 — pull from the named branch reference
+    branch_ref_name = os.environ.get('GITHUB_REF_NAME', 'main')
+    invokeGIT(['pull', 'origin', branch_ref_name])
 
 
 def commit(filename, message):
@@ -137,14 +144,18 @@ def commit(filename, message):
     # @jordanpadams says that he did see an issue where a push occurred during a Roundup.
     # @nutjob4life maintains that a `git pull` at this point would result in `Already up
     # to date` but we all guess it wouldn't hurt.
+
+    # NASA-PDS/roundup-action#160 — push to the named branch reference
+    branch_ref_name = os.environ.get('GITHUB_REF_NAME', 'main')
+
     try:
         _logger.info('WTF')
         invokeGIT(['branch'])
         invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat'])
     except InvokedProcessError:
-        _logger.info('🔁 Pull before push to HEAD:main failed but pressing on')
+        _logger.info('🔁 Pull before push to HEAD:%s failed but pressing on', branch_ref_name)
         pass
-    invokeGIT(['push', 'origin',  'HEAD:main', '--force'])
+    invokeGIT(['push', 'origin',  f'HEAD:{branch_ref_name}', '--force'])
 
 
 def findNextMicro():

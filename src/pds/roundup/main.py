@@ -85,7 +85,9 @@ def main():
     context = Context.create(cwd, populateEnvVars(os.environ), args)
     if context is None:
         contents = ', '.join(os.listdir(cwd))
-        _logger.critical("💥 No usable context in «%s»; note I can only handle Python and Maven projects so far", cwd)
+        _logger.critical(
+            "💥 No usable context in «%s»; note I can only handle Python, Maven, and Node.js projects so far", cwd
+        )
         if not contents:
             _logger.critical('🤷‍♀️ The directory is empty; that might have something to do with it 😝')
         else:

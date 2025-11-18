@@ -34,6 +34,10 @@ class Step(object):
         '''Utility: return the owning user/organization of the repository in use'''
         return self.assembly.context.environ.get('GITHUB_REPOSITORY').split('/')[0]
 
+    def get_branch_ref(self):
+        '''Utility: get the name of the branch reference for the repository being rounded up'''
+        return self.assembly.context.environ.get('GITHUB_REF_NAME')
+
 
 class StepName(Enum):
     '''Enumerated identifiers for each of the possible steps of a roundup'''

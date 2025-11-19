@@ -121,16 +121,70 @@ def git_config():
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
 
 
-def git_pull():
+def get_default_branch():
+    '''Determine the default branch for the repository. Tries multiple methods:
+    1. Check git ls-remote --symref for origin HEAD (most reliable)
+    2. Try git symbolic-ref for origin/HEAD (if already fetched)
+    3. Try "main" branch
+    4. Try "develop" branch
+    5. Fall back to "main"
+    '''
+    # First, try to get the default branch directly from the remote using ls-remote --symref
+    try:
+        result = invokeGIT(['ls-remote', '--symref', 'origin', 'HEAD'])
+        # Result will be like "ref: refs/heads/main\t<commit-hash>" or "ref: refs/heads/develop\t<commit-hash>"
+        for line in result.strip().split('\n'):
+            if line.startswith('ref: refs/heads/'):
+                branch = line.split('refs/heads/')[1].split('\t')[0]
+                if branch:
+                    _logger.debug('🌿 Found default branch via ls-remote --symref: %s', branch)
+                    return branch
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not determine default branch via ls-remote --symref, trying alternatives')
+
+    # Try to get the default branch from local origin/HEAD (if already fetched)
+    try:
+        result = invokeGIT(['symbolic-ref', 'refs/remotes/origin/HEAD'])
+        # Result will be like "refs/remotes/origin/main" or "refs/remotes/origin/develop"
+        branch = result.strip().replace('refs/remotes/origin/', '')
+        if branch:
+            _logger.debug('🌿 Found default branch via symbolic-ref: %s', branch)
+            return branch
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not determine default branch via symbolic-ref, trying alternatives')
+
+    # Try checking if "develop" exists as a remote branch
+    try:
+        result = invokeGIT(['ls-remote', '--heads', 'origin', 'develop'])
+        if result.strip():
+            _logger.debug('🌿 Found "develop" branch as default')
+            return 'develop'
+    except InvokedProcessError:
+        pass
+
+    # Try checking if "main" exists as a remote branch
+    try:
+        result = invokeGIT(['ls-remote', '--heads', 'origin', 'main'])
+        if result.strip():
+            _logger.debug('🌿 Found "main" branch as default')
+            return 'main'
+    except InvokedProcessError:
+        pass
+
+    # All else fails, let's just use `main`
+    _logger.debug('🌿 Using "main" as default branch fallback')
+    return 'main'
+
+
+def git_pull(branch_ref_name='main'):
     # 😮 TODO: Use Python GitHub API
     # But I'm in a rush:
     git_config()
     # NASA-PDS/roundup-action#160 — pull from the named branch reference
-    branch_ref_name = os.environ.get('GITHUB_REF_NAME', 'main')
     invokeGIT(['pull', 'origin', branch_ref_name])
 
 
-def commit(filename, message):
+def commit(filename, message, branch_ref_name='main'):
     '''Commit the file named ``filename`` to the local Git repository with the given ``message``.
     '''
     _logger.debug('🥼 Committing file %s with message «%s»', filename, message)
@@ -145,13 +199,10 @@ def commit(filename, message):
     # @nutjob4life maintains that a `git pull` at this point would result in `Already up
     # to date` but we all guess it wouldn't hurt.
 
-    # NASA-PDS/roundup-action#160 — push to the named branch reference
-    branch_ref_name = os.environ.get('GITHUB_REF_NAME', 'main')
-
     try:
         _logger.info('WTF')
         invokeGIT(['branch'])
-        invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat'])
+        invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat', branch_ref_name])
     except InvokedProcessError:
         _logger.info('🔁 Pull before push to HEAD:%s failed but pressing on', branch_ref_name)
         pass

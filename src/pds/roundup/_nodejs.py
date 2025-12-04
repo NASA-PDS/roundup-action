@@ -160,7 +160,7 @@ class _VersionCommittingStep(_NodeJSStep):
         if not self.assembly.isStable():
             _logger.debug('Skipping version commit for unstable build')
             return
-        commit('package.json', 'Commiting package.json for stable release')
+        commit('package.json', 'Commiting package.json for stable release', self.get_branch_ref())
 
 
 class _BuildStep(_NodeJSStep):
@@ -246,7 +246,10 @@ class _ArtifactPublicationStep(_NodeJSStep):
                 major, minor, micro = int(match.group(1)), int(match.group(2)), int(match.group(3)) + 1
                 self.write_version_number(f'{major}.{minor}.{micro}-unstable')
                 argv = ['npm', 'publish', '--verbose', '--access', 'public']
-                commit('package.json', f'Committing bumped version № {major}.{minor}.{micro} for unstable assembly')
+                commit(
+                    'package.json', f'Committing bumped version № {major}.{minor}.{micro} for unstable assembly',
+                    self.get_branch_ref()
+                )
             invoke(argv)
         except InvokedProcessError:
             # For unstalbe releases, we ignore this
@@ -285,7 +288,7 @@ class _CleanupStep(_NodeJSStep):
         new_version = f'{major}.{minor}.0'
         _logger.debug('🔖 Setting version %s in package.json', new_version)
         self.write_version_number(new_version)
-        commit('package.json', f'Setting next dev version to {major}.{minor}.{micro}')
+        commit('package.json', f'Setting next dev version to {major}.{minor}.{micro}', self.get_branch_ref())
 
 
 class ChangeLogStep(BaseChangeLogStep):

@@ -70,7 +70,7 @@ class _MavenStep(Step):
         return invoke(argv)
 
     def commit_poms(self, message):
-        '''Commit all poms to the HEAD of main with the given ``message``.'''
+        '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``.'''
         git_config()
         for folder, subdirs, filenames in os.walk(self.assembly.context.cwd):
             for fn in filenames:
@@ -90,7 +90,9 @@ class _MavenStep(Step):
         # & merged. However, we added the ``--force`` in the first place because we randomly got
         # ``You are not currently on a branch`` errors.  Somehow, this is related to
         # https://github.com/actions/checkout/issues/317
-        invokeGIT(['push', 'origin', 'HEAD:main'])
+
+        # NASA-PDS/roundup-action#160 — push to the named branch reference
+        invokeGIT(['push', 'origin', f'HEAD:{self.get_branch_ref()}'])
 
 
 class _PreparationStep(Step):

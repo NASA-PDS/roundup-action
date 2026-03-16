@@ -239,6 +239,7 @@ class _ArtifactPublicationStep(_PythonStep):
         argv = [
             '/usr/local/bin/twine',
             'upload',
+            '--verbose',
             '--username',
             self.getCheeseshopCredentials()[0],
             '--password',

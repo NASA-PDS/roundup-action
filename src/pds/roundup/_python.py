@@ -303,7 +303,7 @@ class _CleanupStep(_PythonStep):
         _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
         with open(version_file, 'w') as f:
             f.write(f'{new_version}\n')
-        commit(version_file, f'Setting next dev version to {major}.{minor}.{micro}', self.get_branch_ref())
+        commit(version_file, f'Setting next dev version to {new_version}', self.get_branch_ref())
 
 
 class ChangeLogStep(BaseChangeLogStep):

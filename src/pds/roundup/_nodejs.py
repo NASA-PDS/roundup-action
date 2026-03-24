@@ -288,7 +288,7 @@ class _CleanupStep(_NodeJSStep):
         new_version = f'{major}.{minor}.0'
         _logger.debug('🔖 Setting version %s in package.json', new_version)
         self.write_version_number(new_version)
-        commit('package.json', f'Setting next dev version to {major}.{minor}.{micro}', self.get_branch_ref())
+        commit('package.json', f'Setting next dev version to {new_version}', self.get_branch_ref())
 
 
 class ChangeLogStep(BaseChangeLogStep):

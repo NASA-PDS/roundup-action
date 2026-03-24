@@ -38,15 +38,17 @@ class TextFileDetective(VersionDetective):
         if not os.path.isdir(src_dir):
             raise ValueError("Unable to locate ./src directory in workspace.")
 
-        version_file = None
         for dirpath, _dirnames, filenames in os.walk(src_dir):
             for fn in filenames:
                 if fn.lower() == "version.txt":
-                    version_file = os.path.join(dirpath, fn)
-                    _logger.debug("🪄 Found a version.txt in %s", version_file)
-                    break
+                    candidate = os.path.join(dirpath, fn)
+                    if os.path.islink(candidate):
+                        _logger.debug("⏭ Skipping symlinked version.txt at %s", candidate)
+                        continue
+                    _logger.debug("🪄 Found a version.txt in %s", candidate)
+                    return candidate
 
-        return version_file
+        return None
 
     def detect(self):
         version_file = self.locate_file(self.workspace)

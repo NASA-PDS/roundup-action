@@ -30,27 +30,30 @@ DETECT_SECRETS_ARGS=(
 )
 
 compare_secrets() {
+    local baseline="$1"
+    local newfile="$2"
     diff \
         <(python3 -c "
 import json, sys
 with open(sys.argv[1]) as f: data = json.load(f)
 lines = [f\"{k},{s['hashed_secret']}\" for k, v in data.get('results', {}).items() for s in v]
 print('\n'.join(sorted(lines)))
-" "$1") \
+" "$baseline") \
         <(python3 -c "
 import json, sys
 with open(sys.argv[1]) as f: data = json.load(f)
 lines = [f\"{k},{s['hashed_secret']}\" for k, v in data.get('results', {}).items() for s in v]
 print('\n'.join(sorted(lines)))
-" "$2") \
+" "$newfile") \
         >/dev/null
+    return $?
 }
 
-if [ "$1" = "scan" ]; then
+if [[ "$1" = "scan" ]]; then
     detect-secrets scan "${DETECT_SECRETS_ARGS[@]}" > .secrets.baseline
     echo "Updated .secrets.baseline"
     echo "Next step: run 'scripts/detect_secrets_baseline.sh audit' to review and classify detected secrets."
-elif [ "$1" = "audit" ]; then
+elif [[ "$1" = "audit" ]]; then
     detect-secrets audit .secrets.baseline
 else
     # Check 1: Fail if any secrets in the baseline have not been audited
@@ -60,7 +63,7 @@ with open('.secrets.baseline') as f: data = json.load(f)
 count = sum(1 for v in data.get('results', {}).values() for s in v if 'is_secret' not in s)
 print(count)
 ")
-    if [ "$unaudited" -gt 0 ]; then
+    if [[ "$unaudited" -gt 0 ]]; then
         echo "⚠️ Attention Required! ⚠️" >&2
         echo "$unaudited secret(s) in .secrets.baseline have not been audited." >&2
         echo "Run 'scripts/detect_secrets_baseline.sh audit' to review and classify each detected secret." >&2

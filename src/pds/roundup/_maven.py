@@ -66,7 +66,7 @@ class _MavenStep(Step):
 
     def invokeMaven(self, args):
         '''Invoke Maven with the given ``args``.'''
-        argv = ['mvn', '--quiet'] + args
+        argv = ['mvn', '--quiet', '--update-snapshots'] + args
         return invoke(argv)
 
     def commit_poms(self, message):

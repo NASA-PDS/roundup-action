@@ -118,7 +118,10 @@ def main():
     _logger.info('🗺 The version of ``lasso-issues`` I shall be using: %s', version)
 
     # Here we go daddy
-    _assemblies[args.assembly](context).roundup()
+    try:
+        _assemblies[args.assembly](context).roundup()
+    except Exception:
+        sys.exit(1)
     sys.exit(0)
 
 

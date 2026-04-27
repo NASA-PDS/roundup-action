@@ -121,6 +121,7 @@ def main():
     try:
         _assemblies[args.assembly](context).roundup()
     except Exception:
+        _logger.exception('💀 Fatal error during roundup')
         sys.exit(1)
     sys.exit(0)
 

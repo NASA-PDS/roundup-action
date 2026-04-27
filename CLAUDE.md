@@ -161,6 +161,13 @@ Fixed versions in `setup.cfg` that must match `nasapds/github-actions-base`:
 - github3.py, lxml, packaging, requests, sphinx, twine, wheel
 - External tools: `maven-release`, `python-release`, `nodejs-release`, `requirement-report`, `github_changelog_generator`
 
+## Coding Standards
+
+### Error Handling
+
+- **Avoid catching generic/base exception types** (e.g., Python `except Exception`, Java `catch (Exception e)`, Go `recover()` without re-panic) unless at a top-level last-resort boundary (e.g., `main()`). Always catch the most specific exception type available so errors are handled precisely and unexpected exceptions are not silently swallowed.
+- When a broad catch is unavoidable at a process boundary, always **log the full exception with traceback** before exiting (Python: `_logger.exception(...)`, Java: `logger.error("...", e)`, JS/TS: `console.error("...", err)`).
+
 ## Git Workflow
 
 The roundup makes commits and pushes to `origin main`:

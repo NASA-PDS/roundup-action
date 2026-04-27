@@ -37,9 +37,27 @@ class Assembly(object):
             else:
                 _logger.info('For context %r no step was available for %s; ignoring this step', self.context, stepName)
         _logger.debug('Executing roundup')
+        completed = []
         for step in steps:
             _logger.info("🏎▁▂▃▄▅▆▆▇▇██💨 EXECUTING step %s", step.__class__.__name__)
-            step.execute()
+            try:
+                step.execute()
+                completed.append(step)
+            except Exception:
+                not_run = [s for s in steps if s not in completed and s is not step]
+                _logger.critical(
+                    '💥 Roundup failed at step: %s\n'
+                    '  ✅ Completed (%d): %s\n'
+                    '  ❌ Failed:        %s\n'
+                    '  ⏭  Not run  (%d): %s',
+                    step.__class__.__name__,
+                    len(completed),
+                    ', '.join(s.__class__.__name__ for s in completed) or '(none)',
+                    step.__class__.__name__,
+                    len(not_run),
+                    ', '.join(s.__class__.__name__ for s in not_run) or '(none)',
+                )
+                raise
 
     def isStable(self):
         '''By default, assemblies will always be for "unstable" or in-development releases, so this

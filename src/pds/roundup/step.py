@@ -229,8 +229,11 @@ class DocPublicationStep(Step):
             if not foundFiles:
                 _logger.info('🧐 No doc files in %s, so I am not updating the `documentation.zip` asset', docDir)
                 parent = os.path.abspath(os.path.join(docDir, '..'))
-                _logger.debug('🙁 Here is what is in the doc dir parent %s:', parent)
-                invoke(['/bin/ls', '-lR', parent])
+                if os.path.isdir(parent):
+                    _logger.debug('🙁 Here is what is in the doc dir parent %s:', parent)
+                    invoke(['/bin/ls', '-lR', parent])
+                else:
+                    _logger.debug('🙁 Doc dir parent %s does not exist either', parent)
                 return
 
             # Remove any existing ``documentation.zip``

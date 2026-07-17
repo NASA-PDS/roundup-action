@@ -3,6 +3,7 @@
 '''🤠 PDS Roundup: Assemblies. An assembly is responsible for conducting the roundup.'''
 
 from .step import StepName
+from .errors import RoundupError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ class Assembly(object):
             try:
                 step.execute()
                 completed.append(step)
-            except Exception:
+            except RoundupError as ex:
                 not_run = [s for s in steps if s not in completed and s is not step]
                 _logger.critical(
                     '💥 Roundup failed at step: %s\n'
@@ -57,7 +58,7 @@ class Assembly(object):
                     len(not_run),
                     ', '.join(s.__class__.__name__ for s in not_run) or '(none)',
                 )
-                raise
+                raise ex
 
     def isStable(self):
         '''By default, assemblies will always be for "unstable" or in-development releases, so this

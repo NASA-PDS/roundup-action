@@ -120,8 +120,8 @@ def main():
     # Here we go daddy
     try:
         _assemblies[args.assembly](context).roundup()
-    except Exception:
-        _logger.exception('💀 Fatal error during roundup')
+    except BaseException as ex:
+        _logger.exception('💀 Fatal error during roundup: %s', ex)
         sys.exit(1)
     sys.exit(0)
 

@@ -200,8 +200,6 @@ def commit(filename, message, branch_ref_name='main'):
     # to date` but we all guess it wouldn't hurt.
 
     try:
-        _logger.info('WTF')
-        invokeGIT(['branch'])
         invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat', branch_ref_name])
     except InvokedProcessError:
         _logger.info('🔁 Pull before push to HEAD:%s failed but pressing on', branch_ref_name)

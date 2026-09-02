@@ -181,7 +181,8 @@ def git_pull(branch_ref_name='main'):
     # But I'm in a rush:
     git_config()
     # NASA-PDS/roundup-action#160 — pull from the named branch reference
-    invokeGIT(['pull', 'origin', branch_ref_name])
+    # --no-rebase required since git 2.27 which mandates explicit reconciliation strategy
+    invokeGIT(['pull', '--no-rebase', 'origin', branch_ref_name])
 
 
 def commit(filename, message, branch_ref_name='main'):
@@ -200,7 +201,7 @@ def commit(filename, message, branch_ref_name='main'):
     # to date` but we all guess it wouldn't hurt.
 
     try:
-        invokeGIT(['pull', '--quiet', '--no-edit', '--no-stat', branch_ref_name])
+        invokeGIT(['pull', '--no-rebase', '--quiet', '--no-edit', '--no-stat', branch_ref_name])
     except InvokedProcessError:
         _logger.info('🔁 Pull before push to HEAD:%s failed but pressing on', branch_ref_name)
         pass

@@ -110,10 +110,20 @@ class StablePDSAssembly(PDSAssembly):
 
 class StableRCPDSAssembly(StablePDSAssembly):
     '''Stable assembly for release candidates (release/X.Y.Z-rc.N tags).
-    Identical to StablePDSAssembly but skips versionBump, requirements, changeLog, and docPublication.
+    Identical to StablePDSAssembly but skips requirements, changeLog, and docPublication.
     '''
-    _skipped = {StepName.requirements, StepName.changeLog, StepName.docPublication}
-    pdsSteps = [s for s in PDSAssembly.pdsSteps if s not in _skipped]
+    pdsSteps = [
+        StepName.preparation,
+        StepName.unitTest,
+        StepName.integrationTest,
+        StepName.docs,
+        StepName.versionBump,
+        StepName.build,
+        StepName.artifactPublication,
+        StepName.githubRelease,
+        StepName.versionCommit,
+        StepName.cleanup,
+    ]
 
 
 class UnstablePDSAssembly(PDSAssembly):

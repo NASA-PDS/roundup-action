@@ -6,9 +6,9 @@
 
 from .context import Context
 from .errors import InvokedProcessError
-from .util import populateEnvVars, invoke
+from .util import populateEnvVars, invoke, RC_TAG_RE
 from .assembly import (
-    StablePDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly, EnvironmentalAssembly
+    StablePDSAssembly, StableRCPDSAssembly, UnstablePDSAssembly, IntegrativePDSAssembly, NoOpAssembly, EnvironmentalAssembly
 )
 import os, logging, argparse, sys
 
@@ -119,7 +119,11 @@ def main():
 
     # Here we go daddy
     try:
-        _assemblies[args.assembly](context).roundup()
+        assembly_class = _assemblies[args.assembly]
+        if assembly_class is StablePDSAssembly and RC_TAG_RE.match(os.environ.get('GITHUB_REF_NAME', '')):
+            _logger.info('🏷 RC tag detected; switching to StableRCPDSAssembly')
+            assembly_class = StableRCPDSAssembly
+        assembly_class(context).roundup()
     except BaseException as ex:
         _logger.exception('💀 Fatal error during roundup: %s', ex)
         sys.exit(1)

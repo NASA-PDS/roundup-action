@@ -5,7 +5,7 @@
 from .context import Context
 from .errors import RoundupError, InvokedProcessError
 from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep, ChangeLogStep as BaseChangeLogStep
-from .util import git_config, invoke, invokeGIT, TAG_RE, add_version_label_to_open_bugs, commit, delete_tags
+from .util import git_config, invoke, invokeGIT, TAG_RE, get_rc_number, add_version_label_to_open_bugs, commit, delete_tags
 import shutil, logging, os, json, re
 
 _logger = logging.getLogger(__name__)
@@ -144,11 +144,11 @@ class _VersionBumpingStep(_NodeJSStep):
             raise RoundupError(f'🐎 Stable tag of «{tag}» but not a ``release/`` tag')
 
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        full_version = f'{major}.{minor}.{micro}'
-        _logger.debug('🔖 So we got version %s', full_version)
-
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
+        rc_n = get_rc_number(tag)
+        full_version = f'{major}.{minor}.{micro}-rc.{rc_n}' if rc_n is not None else f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
 
         add_version_label_to_open_bugs(full_version)
         self.write_version_number(full_version)
@@ -204,8 +204,9 @@ class _GitHubReleaseStep(_NodeJSStep):
             return
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        rc_n = get_rc_number(tag)
         # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
-        tag = f'v{major}.{minor}.{micro}'
+        tag = f'v{major}.{minor}.{micro}-rc.{rc_n}' if rc_n is not None else f'v{major}.{minor}.{micro}'
         _logger.debug('🆕 New tag will be %s', tag)
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
         invokeGIT(['push', '--tags'])

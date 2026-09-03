@@ -13,6 +13,7 @@ _logger = logging.getLogger(__name__)
 # =========
 
 TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
+RC_TAG_RE = re.compile(r'^release/(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
 
 
@@ -119,6 +120,12 @@ def git_config():
     # And give the bot its credit
     invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
+
+
+def get_rc_number(tag):
+    '''Return the RC number from a tag like ``release/X.Y.Z-rc.N``, or ``None`` if not an RC tag.'''
+    match = RC_TAG_RE.match(tag)
+    return int(match.group(4)) if match else None
 
 
 def get_branch_from_tag(tag_name):

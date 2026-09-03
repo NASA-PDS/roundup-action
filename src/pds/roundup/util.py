@@ -134,6 +134,13 @@ def get_branch_from_tag(tag_name):
     cannot determine which branch to target in that case.
     Falls back to ``get_default_branch()`` if no branch can be found.
     '''
+    # In shallow clones (GitHub Actions default), remote tracking refs may not be populated.
+    # Fetch them so git branch -r --contains can see all branches.
+    try:
+        invokeGIT(['fetch', 'origin'])
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not fetch origin; branch detection for tag "%s" may be incomplete', tag_name)
+
     try:
         result = invokeGIT(['branch', '-r', '--contains', tag_name])
         branches = []

@@ -108,6 +108,24 @@ class StablePDSAssembly(PDSAssembly):
         return True
 
 
+class StableRCPDSAssembly(StablePDSAssembly):
+    '''Stable assembly for release candidates (release/X.Y.Z-rc.N tags).
+    Identical to StablePDSAssembly but skips requirements, changeLog, and docPublication.
+    '''
+    pdsSteps = [
+        StepName.preparation,
+        StepName.unitTest,
+        StepName.integrationTest,
+        StepName.docs,
+        StepName.versionBump,
+        StepName.build,
+        StepName.artifactPublication,
+        StepName.githubRelease,
+        StepName.versionCommit,
+        StepName.cleanup,
+    ]
+
+
 class UnstablePDSAssembly(PDSAssembly):
     '''The unstable (in-development) PDS assembly'''
     pass

@@ -2,7 +2,7 @@
 
 '''🤠 PDS Roundup — Utilities'''
 
-from .errors import InvokedProcessError
+from .errors import InvokedProcessError, RoundupError
 import subprocess, logging, re, os
 
 
@@ -13,6 +13,7 @@ _logger = logging.getLogger(__name__)
 # =========
 
 TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
+RC_TAG_RE = re.compile(r'^release/(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
 
 
@@ -119,6 +120,54 @@ def git_config():
     # And give the bot its credit
     invokeGIT(['config', '--local', 'user.email', 'pdsen-ci@jpl.nasa.gov'])
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
+
+
+def get_rc_number(tag):
+    '''Return the RC number from a tag like ``release/X.Y.Z-rc.N``, or ``None`` if not an RC tag.'''
+    match = RC_TAG_RE.match(tag)
+    return int(match.group(4)) if match else None
+
+
+def get_branch_from_tag(tag_name):
+    '''Return the single remote branch that contains the commit pointed to by ``tag_name``.
+    Raises ``RoundupError`` if the commit is reachable from multiple branches, since roundup
+    cannot determine which branch to target in that case.
+    Falls back to ``get_default_branch()`` if no branch can be found.
+    '''
+    # In shallow clones (GitHub Actions default), remote tracking refs may not be populated.
+    # Fetch them so git branch -r --contains can see all branches.
+    try:
+        invokeGIT(['fetch', 'origin'])
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not fetch origin; branch detection for tag "%s" may be incomplete', tag_name)
+
+    try:
+        result = invokeGIT(['branch', '-r', '--contains', tag_name])
+        branches = []
+        for line in result.strip().split('\n'):
+            line = line.strip()
+            if not line or '->' in line:
+                continue
+            if line.startswith('origin/'):
+                line = line[len('origin/'):]
+            branches.append(line)
+
+        if len(branches) == 1:
+            _logger.debug('🌿 Tag "%s" is on branch: %s', tag_name, branches[0])
+            return branches[0]
+
+        if len(branches) > 1:
+            raise RoundupError(
+                f'The commit for tag "{tag_name}" was found on multiple branches: {branches}. '
+                f'Roundup does not support this case. Please recreate the tag on a commit that '
+                f'belongs to only one branch.'
+            )
+
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not determine branch for tag "%s" via git branch -r --contains', tag_name)
+
+    _logger.debug('🌿 No branch found for tag "%s", falling back to default branch', tag_name)
+    return get_default_branch()
 
 
 def get_default_branch():

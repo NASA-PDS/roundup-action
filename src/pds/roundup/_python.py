@@ -7,7 +7,7 @@ from .errors import InvokedProcessError, RoundupError
 from .errors import MissingEnvVarError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, RequirementsStep, DocPublicationStep
-from .util import invoke, invokeGIT, TAG_RE, commit, delete_tags, git_config, add_version_label_to_open_bugs
+from .util import invoke, invokeGIT, TAG_RE, get_rc_number, commit, delete_tags, git_config, add_version_label_to_open_bugs
 from ._detectives import TextFileDetective
 import logging, os, re, shutil
 
@@ -130,11 +130,11 @@ class _VersionBumpingStep(_PythonStep):
             raise RoundupError(f'🐎 Stable tag of «{tag}» but not a ``release/`` tag')
 
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        full_version = f'{major}.{minor}.{micro}'
-        _logger.debug('🔖 So we got version %s', full_version)
-
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
+        rc_n = get_rc_number(tag)
+        full_version = f'{major}.{minor}.{micro}rc{rc_n}' if rc_n is not None else f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
 
         add_version_label_to_open_bugs(full_version)
         _logger.debug("Locating VERSION.txt to update with new release version.")
@@ -149,7 +149,7 @@ class _VersionBumpingStep(_PythonStep):
             raise RoundupError('Unable to locate VERSION.txt in repo. Version bump failed.')
         else:
             with open(version_file, 'w') as inp:
-                inp.write(f'{major}.{minor}.{micro}\n')
+                inp.write(f'{full_version}\n')
 
 
 class _VersionCommittingStep(_PythonStep):
@@ -207,8 +207,9 @@ class _GitHubReleaseStep(_PythonStep):
             return
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        rc_n = get_rc_number(tag)
         # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
-        tag = f'v{major}.{minor}.{micro}'
+        tag = f'v{major}.{minor}.{micro}-rc.{rc_n}' if rc_n is not None else f'v{major}.{minor}.{micro}'
         _logger.debug('🆕 New tag will be %s', tag)
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
         invokeGIT(['push', '--tags'])

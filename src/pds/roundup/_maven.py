@@ -6,7 +6,7 @@ from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import ChangeLogStep as BaseChangeLogStep
 from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
-from .util import invoke, invokeGIT, TAG_RE, git_config, delete_tags, add_version_label_to_open_bugs
+from .util import invoke, invokeGIT, TAG_RE, get_rc_number, git_config, delete_tags, add_version_label_to_open_bugs
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -226,10 +226,12 @@ class _GitHubReleaseStep(_MavenStep):
             return
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
         _logger.debug('🔖 So we got version %d.%d.%s', major, minor, micro)
+        rc_n = get_rc_number(tag)
         # roundup-action#90: we no longer bump the version number; just re-tag at the current HEAD
-        tag, pom_version = f'v{major}.{minor}.{micro}', f'{major}.{minor}.{micro}'
+        pom_version = f'{major}.{minor}.{micro}-rc.{rc_n}' if rc_n is not None else f'{major}.{minor}.{micro}'
+        tag = f'v{pom_version}'
         _logger.debug('🆕 New GitHub tag will be %s and pom version will be %s', tag, pom_version)
-        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={major}.{minor}.{micro}', _mavenVersionSetCommand])
+        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={pom_version}', _mavenVersionSetCommand])
         self.commit_poms(f'Stable release {pom_version} in poms')
         invokeGIT(['tag', '--annotate', '--force', '--message', f'Tag release {tag}', tag])
         invokeGIT(['push', '--tags'])
@@ -307,12 +309,13 @@ class _VersionBumpingStep(_MavenStep):
         if not match:
             raise RoundupError(f'🐎 Stable workflow on tag «{tag}» but not a ``release/`` name!')
         major, minor, micro = int(match.group(1)), int(match.group(2)), match.group(4)
-        full_version = f'{major}.{minor}.{micro}'
-        _logger.debug('🔖 So we got version %s', full_version)
-        add_version_label_to_open_bugs(full_version)
         if micro is None:
             raise RoundupError('Invalid release version supplied in tag name. You must supply Major.Minor.Micro')
-        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={major}.{minor}.{micro}', _mavenVersionSetCommand])
+        rc_n = get_rc_number(tag)
+        full_version = f'{major}.{minor}.{micro}-rc.{rc_n}' if rc_n is not None else f'{major}.{minor}.{micro}'
+        _logger.debug('🔖 So we got version %s', full_version)
+        add_version_label_to_open_bugs(full_version)
+        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={full_version}', _mavenVersionSetCommand])
         _logger.debug('❗️ After I ran `mvn versions:set`, here is what the pom.xml looks like as far as <version>')
         with open('pom.xml', 'r') as f:
             for 𝐋 in f:

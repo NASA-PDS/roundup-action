@@ -2,7 +2,7 @@
 
 '''🤠 PDS Roundup — Utilities'''
 
-from .errors import InvokedProcessError
+from .errors import InvokedProcessError, RoundupError
 import subprocess, logging, re, os
 
 
@@ -121,6 +121,41 @@ def git_config():
     invokeGIT(['config', '--local', 'user.name', 'PDSEN CI Bot'])
 
 
+def get_branch_from_tag(tag_name):
+    '''Return the single remote branch that contains the commit pointed to by ``tag_name``.
+    Raises ``RoundupError`` if the commit is reachable from multiple branches, since roundup
+    cannot determine which branch to target in that case.
+    Falls back to ``get_default_branch()`` if no branch can be found.
+    '''
+    try:
+        result = invokeGIT(['branch', '-r', '--contains', tag_name])
+        branches = []
+        for line in result.strip().split('\n'):
+            line = line.strip()
+            if not line or '->' in line:
+                continue
+            if line.startswith('origin/'):
+                line = line[len('origin/'):]
+            branches.append(line)
+
+        if len(branches) == 1:
+            _logger.debug('🌿 Tag "%s" is on branch: %s', tag_name, branches[0])
+            return branches[0]
+
+        if len(branches) > 1:
+            raise RoundupError(
+                f'The commit for tag "{tag_name}" was found on multiple branches: {branches}. '
+                f'Roundup does not support this case. Please recreate the tag on a commit that '
+                f'belongs to only one branch.'
+            )
+
+    except InvokedProcessError:
+        _logger.debug('🔍 Could not determine branch for tag "%s" via git branch -r --contains', tag_name)
+
+    _logger.debug('🌿 No branch found for tag "%s", falling back to default branch', tag_name)
+    return get_default_branch()
+
+
 def get_default_branch():
     '''Determine the default branch for the repository. Tries multiple methods:
     1. Check git ls-remote --symref for origin HEAD (most reliable)
@@ -182,9 +217,7 @@ def git_pull(branch_ref_name='main'):
     git_config()
     # NASA-PDS/roundup-action#160 — pull from the named branch reference
     # --no-rebase required since git 2.27 which mandates explicit reconciliation strategy
-    # --autostash handles the case where a prior step (e.g. versionBump) left uncommitted
-    # changes in the working tree — git stashes them, pulls, then re-applies automatically
-    invokeGIT(['pull', '--no-rebase', '--autostash', 'origin', branch_ref_name])
+    invokeGIT(['pull', '--no-rebase', 'origin', branch_ref_name])
 
 
 def commit(filename, message, branch_ref_name='main'):

@@ -4,7 +4,7 @@
 
 from enum import Enum
 from .errors import InvokedProcessError
-from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_default_branch
+from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag
 import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
@@ -42,9 +42,9 @@ class Step(object):
         # If GITHUB_REF_NAME is a tag (e.g., "release/3.23.0" or "v1.2.3"), determine the default branch
         # since git_pull() needs a branch reference, not a tag
         if TAG_RE.match(ref_name) or VERSION_RE.match(ref_name):
-            default_branch = get_default_branch()
-            _logger.debug('🔖 GITHUB_REF_NAME "%s" appears to be a tag; using default branch "%s" instead', ref_name, default_branch)
-            return default_branch
+            branch = get_branch_from_tag(ref_name)
+            _logger.debug('🔖 GITHUB_REF_NAME "%s" appears to be a tag; resolved to branch "%s"', ref_name, branch)
+            return branch
         return ref_name
 
 

@@ -22,6 +22,7 @@ _assemblies = {
     'unstable':    UnstablePDSAssembly,
 }
 _defaultAssembly = 'unstable'
+_alpineEdgeCommunityRepo = 'https://dl-cdn.alpinelinux.org/alpine/edge/community'
 
 
 def _parseArgs():
@@ -96,11 +97,11 @@ def main():
 
     # Bonus package time
     if args.packages:
-        invoke(['apk', 'update'])
+        invoke(['apk', 'update', '--repository', _alpineEdgeCommunityRepo])
         for package in args.packages.split(','):
             try:
                 _logger.debug('🎁 Adding package %s', package)
-                invoke(['apk', 'add', '--no-progress', package])
+                invoke(['apk', 'add', '--no-progress', '--repository', _alpineEdgeCommunityRepo, package])
             except InvokedProcessError:
                 _logger.critical('💥 Cannot add package %s, aborting', package)
                 sys.exit(1)

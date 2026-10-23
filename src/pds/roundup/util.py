@@ -15,6 +15,7 @@ _logger = logging.getLogger(__name__)
 TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
 RC_TAG_RE = re.compile(r'^release/(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
+MULTIPLE_BRANCHES_DOC_URL = 'https://github.com/NASA-PDS/roundup-action#release-tag-found-on-multiple-branches'
 
 
 # Functions
@@ -160,7 +161,7 @@ def get_branch_from_tag(tag_name):
             raise RoundupError(
                 f'The commit for tag "{tag_name}" was found on multiple branches: {branches}. '
                 f'Roundup does not support this case. Please recreate the tag on a commit that '
-                f'belongs to only one branch.'
+                f'belongs to only one branch. See {MULTIPLE_BRANCHES_DOC_URL} for details.'
             )
 
     except InvokedProcessError:

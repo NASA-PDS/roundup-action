@@ -138,6 +138,45 @@ $ git push origin release/2.1.0
 ```
 
 
+## 🚑 Common Errors
+
+### Release tag found on multiple branches
+
+```
+RoundupError: The commit for tag "release/X.Y.Z" was found on multiple branches: ['feature/some-branch', 'main']. Roundup does not support this case.
+```
+
+**What it means.** For a `release/X.Y.Z` tag, roundup determines which branch to pull and push to by running `git branch -r --contains` on the tag. That command lists every remote branch that has the tagged commit anywhere in its history, not only branches that point at it. Roundup stops if more than one branch is listed. This happens when, for example:
+
+-   A feature branch was created from `main` at or after the tagged commit, so it contains that commit.
+-   The tagged commit was made on a feature branch that has since been merged into `main`.
+
+**How to fix it.** Make the tagged commit reachable from exactly one remote branch, then re-push the tag:
+
+1.  Find the branches that contain the tagged commit:
+    ```console
+    $ TAG="release/2.1.0"
+    $ git fetch origin
+    $ git branch --remote --contains "${TAG}"
+    ```
+2.  Do one of the following:
+    -   If the extra branch is merged or abandoned, delete it from the remote:
+        ```console
+        $ BRANCH="feature/some-branch"
+        $ git push origin --delete "${BRANCH}"
+        ```
+    -   If the extra branch is still active, add a new commit to `main` that the extra branch does not contain, and tag that commit instead.
+3.  Delete and recreate the tag on the intended commit, then push it:
+    ```console
+    $ git push origin --delete "${TAG}"
+    $ git tag --delete "${TAG}"
+    $ git checkout main
+    $ git pull
+    $ git tag --annotate --message "Release of 2.1.0" "${TAG}"
+    $ git push origin "${TAG}"
+    ```
+
+
 ## 💁‍♀️ Demonstration
 
 The following is a brief example how a workflow that shows how this action can be used:

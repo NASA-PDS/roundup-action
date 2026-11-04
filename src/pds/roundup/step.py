@@ -4,7 +4,10 @@
 
 from enum import Enum
 from .errors import InvokedProcessError
-from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag
+from .util import (
+    git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag, delete_tags,
+    has_active_workflow_run,
+)
 import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
@@ -33,6 +36,18 @@ class Step(object):
     def getOwner(self):
         '''Utility: return the owning user/organization of the repository in use'''
         return self.assembly.context.environ.get('GITHUB_REPOSITORY').split('/')[0]
+
+    def prune_finished_release_tags(self):
+        '''Delete the ``release/*`` tags, except any whose own workflow run has not finished.
+
+        A stable roundup learns its version from its ``release/*`` tag, so deleting that tag while the
+        run is still going makes the run fail. An unstable roundup that started earlier, on a merge to
+        ``main``, can still be pruning at that point.
+        '''
+        environ = self.assembly.context.environ
+        api_url = environ.get('GITHUB_API_URL', 'https://api.github.com')
+        owner, repository, token = self.getOwner(), self.getRepository(), self.getToken()
+        delete_tags('release/*', skip=lambda tag: has_active_workflow_run(api_url, owner, repository, tag, token))
 
     def get_branch_ref(self):
         '''Utility: get the name of the branch reference for the repository being rounded up'''

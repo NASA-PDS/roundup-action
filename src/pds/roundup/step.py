@@ -22,6 +22,22 @@ class Step(object):
     def execute(self):
         raise NotImplementedError('Subclasses must implement ``execute``')
 
+    def commit_version_bump(self):
+        '''Hook: commit (and push) any uncommitted version bump so it survives a ``git pull``.
+        By default there is nothing to commit; contexts whose version bump leaves the working
+        tree dirty (e.g., Maven) override this.
+        '''
+        pass
+
+    def pull_branch(self):
+        '''Pull the branch being rounded up, after committing the bumped version.
+
+        Git refuses to merge when uncommitted changes (the bumped version) overlap with files changed
+        upstream, so the bump must be committed (and pushed, where possible) first.
+        '''
+        self.commit_version_bump()
+        git_pull(self.get_branch_ref())
+
     def getRepository(self):
         '''Utility: get the name of the GitHub repository'''
         return self.assembly.context.environ.get('GITHUB_REPOSITORY').split('/')[1]
@@ -127,7 +143,7 @@ class ChangeLogStep(Step):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate changelog')
             return
-        git_pull(self.get_branch_ref())
+        self.pull_branch()
         invoke([
             'github_changelog_generator',
             '--user',
@@ -164,7 +180,7 @@ class RequirementsStep(Step):
         if not token:
             _logger.info('🤷‍♀️ No GitHub administrative token; cannot generate requirements')
             return
-        git_pull(self.get_branch_ref())
+        self.pull_branch()
         argv = [
             'requirement-report',
             '--format',

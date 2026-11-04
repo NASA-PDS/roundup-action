@@ -5,7 +5,8 @@
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import ChangeLogStep as BaseChangeLogStep
-from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
+from .step import RequirementsStep as BaseRequirementsStep
+from .step import Step, StepName, NullStep, DocPublicationStep
 from .util import invoke, invokeGIT, TAG_RE, get_rc_number, git_config, delete_tags, add_version_label_to_open_bugs
 from lxml import etree
 import logging, os, base64, subprocess, re
@@ -68,6 +69,12 @@ class _MavenStep(Step):
         '''Invoke Maven with the given ``args``.'''
         argv = ['mvn', '--quiet', '--update-snapshots'] + args
         return invoke(argv)
+
+    def commit_version_bump(self):
+        '''Commit and push the poms changed by the version bump so ``git pull`` can merge cleanly.'''
+        if not self.assembly.isStable():
+            return
+        self.commit_poms('Committing poms for stable release')
 
     def commit_poms(self, message):
         '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``.'''
@@ -363,7 +370,11 @@ class _CleanupStep(_MavenStep):
         self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
 
 
-class ChangeLogStep(BaseChangeLogStep):
+class RequirementsStep(_MavenStep, BaseRequirementsStep):
+    pass
+
+
+class ChangeLogStep(_MavenStep, BaseChangeLogStep):
     def execute(self):
         _logger.debug('Maven changelog step')
         delete_tags('*SNAPSHOT*')

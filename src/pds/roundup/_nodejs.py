@@ -188,8 +188,8 @@ class _GitHubReleaseStep(_NodeJSStep):
         delete_tags('*dev*')
 
     def _pruneReleaseTags(self):
-        '''Get rid of ``release/*`` tags.'''
-        delete_tags('release/*')
+        '''Get rid of ``release/*`` tags, except those whose own workflow run is still going.'''
+        self.prune_finished_release_tags()
 
     def _tagRelease(self):
         '''Tag the current release using the v1.2.3-style tag based on the release/1.2.3-style tag.'''

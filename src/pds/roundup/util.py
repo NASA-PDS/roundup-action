@@ -3,7 +3,7 @@
 '''🤠 PDS Roundup — Utilities'''
 
 from .errors import InvokedProcessError, RoundupError
-import subprocess, logging, re, os
+import subprocess, logging, re, os, requests
 
 
 _logger = logging.getLogger(__name__)
@@ -296,8 +296,26 @@ def contextFactories():
     }
 
 
-def delete_tags(pattern):
-    '''Delete tags matching ``pattern``.'''
+def has_active_workflow_run(api_url, owner, repository, ref, token):
+    '''Tell whether a workflow run for the branch or tag named ``ref`` is still queued or in progress.
+
+    If GitHub cannot be asked, assume there is such a run, since callers use this to decide what is
+    safe to delete.
+    '''
+    url = f'{api_url}/repos/{owner}/{repository}/actions/runs'
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'}
+    try:
+        response = requests.get(url, params={'branch': ref, 'per_page': 20}, headers=headers, timeout=30)
+        response.raise_for_status()
+        runs = response.json()['workflow_runs']
+    except (requests.RequestException, KeyError) as ex:
+        _logger.info('🧐 Cannot list workflow runs for %s (%s); assuming one is active', ref, ex)
+        return True
+    return any(run.get('status') != 'completed' for run in runs)
+
+
+def delete_tags(pattern, skip=None):
+    '''Delete tags matching ``pattern``, except those for which the optional callable ``skip`` is true.'''
     try:
         invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
     except InvokedProcessError:
@@ -307,6 +325,9 @@ def delete_tags(pattern):
     for tag in tags:
         tag = tag.strip()
         if not tag: continue
+        if skip is not None and skip(tag):
+            _logger.info('🛡 Keeping tag %s', tag)
+            continue
         try:
             _logger.debug('␡ Attempting to delete tag %s', tag)
             invokeGIT(['tag', '--delete', tag])

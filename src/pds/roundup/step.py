@@ -23,9 +23,16 @@ class Step(object):
         raise NotImplementedError('Subclasses must implement ``execute``')
 
     def commit_version_bump(self):
-        '''Hook: commit (and push) any uncommitted version bump so it survives a ``git pull``.
+        '''Hook: commit (locally, without pushing) any uncommitted version bump so it survives a
+        ``git pull``. Return ``True`` if a commit was made that still needs pushing, else ``False``.
         By default there is nothing to commit; contexts whose version bump leaves the working
         tree dirty (e.g., Maven) override this.
+        '''
+        return False
+
+    def push_version_bump(self):
+        '''Hook: push the commit made by ``commit_version_bump``. Called only after the branch has
+        been pulled, so the push is not rejected when the remote branch has advanced.
         '''
         pass
 
@@ -33,10 +40,14 @@ class Step(object):
         '''Pull the branch being rounded up, after committing the bumped version.
 
         Git refuses to merge when uncommitted changes (the bumped version) overlap with files changed
-        upstream, so the bump must be committed (and pushed, where possible) first.
+        upstream, so the bump must be committed first. It is pushed only after the pull, so that
+        commits that landed on the remote branch in the meantime are merged rather than causing the
+        push to be rejected.
         '''
-        self.commit_version_bump()
+        needs_push = self.commit_version_bump()
         git_pull(self.get_branch_ref())
+        if needs_push:
+            self.push_version_bump()
 
     def getRepository(self):
         '''Utility: get the name of the GitHub repository'''

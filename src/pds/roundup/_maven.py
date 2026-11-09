@@ -72,9 +72,10 @@ class _MavenStep(Step):
 
     def commit_version_bump(self):
         '''Commit and push the poms changed by the version bump so ``git pull`` can merge cleanly.'''
-        if not self.assembly.isStable():
+        if not self.assembly.isStable() or getattr(self.assembly, '_stable_version_committed', False):
             return
         self.commit_poms('Committing poms for stable release')
+        self.assembly._stable_version_committed = True
 
     def commit_poms(self, message):
         '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``.'''

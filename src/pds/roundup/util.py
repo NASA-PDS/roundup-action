@@ -16,6 +16,8 @@ TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
 RC_TAG_RE = re.compile(r'^release/(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
 MULTIPLE_BRANCHES_DOC_URL = 'https://github.com/NASA-PDS/roundup-action#release-tag-found-on-multiple-branches'
+WORKFLOW_RUNS_PER_PAGE = 100
+WORKFLOW_RUNS_MAX_PAGES = 10
 
 
 # Functions
@@ -305,13 +307,24 @@ def has_active_workflow_run(api_url, owner, repository, ref, token):
     url = f'{api_url}/repos/{owner}/{repository}/actions/runs'
     headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'}
     try:
-        response = requests.get(url, params={'branch': ref, 'per_page': 20}, headers=headers, timeout=30)
-        response.raise_for_status()
-        runs = response.json()['workflow_runs']
-    except (requests.RequestException, KeyError) as ex:
+        for page in range(1, WORKFLOW_RUNS_MAX_PAGES + 1):
+            params = {'branch': ref, 'per_page': WORKFLOW_RUNS_PER_PAGE, 'page': page}
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            payload = response.json()
+            runs = payload.get('workflow_runs') if isinstance(payload, dict) else None
+            if not isinstance(runs, list) or not all(isinstance(run, dict) for run in runs):
+                _logger.info('🧐 Unexpected workflow runs listing for %s; assuming one is active', ref)
+                return True
+            if any(run.get('status') != 'completed' for run in runs):
+                return True
+            if len(runs) < WORKFLOW_RUNS_PER_PAGE:
+                return False
+    except (requests.RequestException, ValueError) as ex:
         _logger.info('🧐 Cannot list workflow runs for %s (%s); assuming one is active', ref, ex)
         return True
-    return any(run.get('status') != 'completed' for run in runs)
+    _logger.info('🧐 More than %d workflow runs for %s; assuming one is active', WORKFLOW_RUNS_MAX_PAGES * WORKFLOW_RUNS_PER_PAGE, ref)
+    return True
 
 
 def delete_tags(pattern, skip=None):

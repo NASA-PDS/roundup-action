@@ -8,9 +8,12 @@ from .util import (
     git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag, delete_tags,
     has_active_workflow_run,
 )
-import logging, github3, tempfile, zipfile, os
+import logging, github3, tempfile, zipfile, os, time
 
 _logger = logging.getLogger(__name__)
+
+# How long to wait before trusting that a release tag has no workflow run in flight
+RUN_VISIBILITY_DELAY_SECONDS = 10
 
 
 class Step(object):
@@ -45,9 +48,17 @@ class Step(object):
         ``main``, can still be pruning at that point.
         '''
         environ = self.assembly.context.environ
-        api_url = environ.get('GITHUB_API_URL', 'https://api.github.com')
+        api_url = environ.get('GITHUB_API_URL') or 'https://api.github.com'
         owner, repository, token = self.getOwner(), self.getRepository(), self.getToken()
-        delete_tags('release/*', skip=lambda tag: has_active_workflow_run(api_url, owner, repository, tag, token))
+
+        def in_use(tag):
+            if has_active_workflow_run(api_url, owner, repository, tag, token):
+                return True
+            # A tag can reach git a moment before GitHub lists the run it triggered, so look once more
+            time.sleep(RUN_VISIBILITY_DELAY_SECONDS)
+            return has_active_workflow_run(api_url, owner, repository, tag, token)
+
+        delete_tags('release/*', skip=in_use)
 
     def get_branch_ref(self):
         '''Utility: get the name of the branch reference for the repository being rounded up'''

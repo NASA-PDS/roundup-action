@@ -5,7 +5,8 @@
 from .context import Context
 from .errors import InvokedProcessError, MissingEnvVarError, RoundupError
 from .step import ChangeLogStep as BaseChangeLogStep
-from .step import Step, StepName, NullStep, DocPublicationStep, RequirementsStep
+from .step import RequirementsStep as BaseRequirementsStep
+from .step import Step, StepName, NullStep, DocPublicationStep
 from .util import invoke, invokeGIT, TAG_RE, get_rc_number, git_config, delete_tags, add_version_label_to_open_bugs
 from lxml import etree
 import logging, os, base64, subprocess, re
@@ -69,8 +70,27 @@ class _MavenStep(Step):
         argv = ['mvn', '--quiet', '--update-snapshots'] + args
         return invoke(argv)
 
+    def commit_version_bump(self):
+        '''Commit (locally) the poms changed by the version bump so ``git pull`` can merge cleanly.
+        Return ``True`` if a commit was made that ``push_version_bump`` must push.
+        '''
+        if not self.assembly.isStable() or getattr(self.assembly, '_stable_version_committed', False):
+            return False
+        self._commit_poms_locally('Committing poms for stable release')
+        self.assembly._stable_version_committed = True
+        return True
+
+    def push_version_bump(self):
+        '''Push the commit made by ``commit_version_bump`` to the branch being rounded up.'''
+        self._push_poms()
+
     def commit_poms(self, message):
         '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``.'''
+        self._commit_poms_locally(message)
+        self._push_poms()
+
+    def _commit_poms_locally(self, message):
+        '''Commit all poms to the local repository with the given ``message``, without pushing.'''
         git_config()
         for folder, subdirs, filenames in os.walk(self.assembly.context.cwd):
             for fn in filenames:
@@ -84,6 +104,8 @@ class _MavenStep(Step):
                         _logger.info('🤫 Ignoring ``git add`` on %s', path)
         invokeGIT(['commit', '--allow-empty', '--message', message])
 
+    def _push_poms(self):
+        '''Push the local ``HEAD`` to the branch being rounded up.'''
         # To resolve #76, @jordnpadams removed the ``--force`` from the git invocation below ↓
         #
         # Which is nice, because it's good to protect the `main` branch from recently made commits
@@ -363,7 +385,11 @@ class _CleanupStep(_MavenStep):
         self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
 
 
-class ChangeLogStep(BaseChangeLogStep):
+class RequirementsStep(_MavenStep, BaseRequirementsStep):
+    pass
+
+
+class ChangeLogStep(_MavenStep, BaseChangeLogStep):
     def execute(self):
         _logger.debug('Maven changelog step')
         delete_tags('*SNAPSHOT*')

@@ -232,7 +232,8 @@ def git_pull(branch_ref_name='main'):
     git_config()
     # NASA-PDS/roundup-action#160 — pull from the named branch reference
     # --no-rebase required since git 2.27 which mandates explicit reconciliation strategy
-    invokeGIT(['pull', '--no-rebase', 'origin', branch_ref_name])
+    # --no-edit accepts the auto-generated merge message so a diverged pull never waits on an editor
+    invokeGIT(['pull', '--no-rebase', '--no-edit', 'origin', branch_ref_name])
 
 
 def commit(filename, message, branch_ref_name='main'):

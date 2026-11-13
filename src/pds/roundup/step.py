@@ -51,14 +51,22 @@ class Step(object):
         api_url = environ.get('GITHUB_API_URL') or 'https://api.github.com'
         owner, repository, token = self.getOwner(), self.getRepository(), self.getToken()
 
-        def in_use(tag):
-            if has_active_workflow_run(api_url, owner, repository, tag, token):
-                return True
-            # A tag can reach git a moment before GitHub lists the run it triggered, so look once more
-            time.sleep(RUN_VISIBILITY_DELAY_SECONDS)
-            return has_active_workflow_run(api_url, owner, repository, tag, token)
+        def in_use(tags):
+            active_tags = {
+                tag for tag in tags
+                if has_active_workflow_run(api_url, owner, repository, tag, token)
+            }
+            candidates = [tag for tag in tags if tag not in active_tags]
+            if candidates:
+                # A tag can reach git before GitHub lists its run; wait once before confirming candidates.
+                time.sleep(RUN_VISIBILITY_DELAY_SECONDS)
+                active_tags.update(
+                    tag for tag in candidates
+                    if has_active_workflow_run(api_url, owner, repository, tag, token)
+                )
+            return active_tags
 
-        delete_tags('release/*', skip=in_use)
+        delete_tags('release/*', skip_tags=in_use)
 
     def get_branch_ref(self):
         '''Utility: get the name of the branch reference for the repository being rounded up'''

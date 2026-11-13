@@ -110,10 +110,10 @@ class HasActiveWorkflowRunTest(unittest.TestCase):
 
 
 class DeleteTagsTest(unittest.TestCase):
-    def _delete(self, tags, skip=None):
+    def _delete(self, tags, skip=None, skip_tags=None):
         git = mock.Mock(side_effect=lambda args: '\n'.join(tags) if args[:2] == ['tag', '--list'] else '')
         with mock.patch.object(util, 'invokeGIT', git):
-            util.delete_tags('release/*', skip=skip)
+            util.delete_tags('release/*', skip=skip, skip_tags=skip_tags)
         return [call.args[0] for call in git.call_args_list]
 
     def test_deletes_every_match_by_default(self):
@@ -126,6 +126,13 @@ class DeleteTagsTest(unittest.TestCase):
         self.assertIn(['push', '--delete', 'origin', 'release/1.0.0'], calls)
         self.assertNotIn(['push', '--delete', 'origin', 'release/2.0.0'], calls)
         self.assertNotIn(['tag', '--delete', 'release/2.0.0'], calls)
+
+    def test_batch_skipped_tags_are_kept(self):
+        skip_tags = mock.Mock(return_value={'release/2.0.0'})
+        calls = self._delete(['release/1.0.0', 'release/2.0.0'], skip_tags=skip_tags)
+        self.assertIn(['push', '--delete', 'origin', 'release/1.0.0'], calls)
+        self.assertNotIn(['push', '--delete', 'origin', 'release/2.0.0'], calls)
+        skip_tags.assert_called_once_with(['release/1.0.0', 'release/2.0.0'])
 
 
 class PruneFinishedReleaseTagsTest(unittest.TestCase):
@@ -203,6 +210,37 @@ class PruneFinishedReleaseTagsTest(unittest.TestCase):
         calls = [call.args[0] for call in git.call_args_list]
         self.assertNotIn(['push', '--delete', 'origin', 'release/5.4.0'], calls)
         self.sleep.assert_called_once_with(step.RUN_VISIBILITY_DELAY_SECONDS)
+
+    def test_waits_once_to_confirm_all_candidate_tags(self):
+        tags = ['release/5.3.0', 'release/5.4.0']
+        events = []
+        requests_by_tag = {'release/5.3.0': 0, 'release/5.4.0': 0}
+
+        def get(url, params, **kwargs):
+            tag = params['branch']
+            requests_by_tag[tag] += 1
+            events.append(('get', tag))
+            if tag == 'release/5.3.0' and requests_by_tag[tag] == 2:
+                runs = [{'status': 'queued'}]
+            else:
+                runs = []
+            return _response(runs)
+
+        git = mock.Mock(side_effect=lambda args: '\n'.join(tags) if args[:2] == ['tag', '--list'] else '')
+        self.sleep.side_effect = lambda seconds: events.append(('sleep', seconds))
+        with mock.patch.object(util, 'invokeGIT', git), mock.patch.object(util.requests, 'get', side_effect=get):
+            self.step.prune_finished_release_tags()
+
+        calls = [call.args[0] for call in git.call_args_list]
+        self.assertNotIn(['push', '--delete', 'origin', 'release/5.3.0'], calls)
+        self.assertIn(['push', '--delete', 'origin', 'release/5.4.0'], calls)
+        self.assertEqual([
+            ('get', 'release/5.3.0'),
+            ('get', 'release/5.4.0'),
+            ('sleep', step.RUN_VISIBILITY_DELAY_SECONDS),
+            ('get', 'release/5.3.0'),
+            ('get', 'release/5.4.0'),
+        ], events)
 
     def test_does_not_pause_for_a_tag_with_a_run_in_progress(self):
         self._prune(['release/5.4.0'], {'release/5.4.0': [{'status': 'in_progress'}]})

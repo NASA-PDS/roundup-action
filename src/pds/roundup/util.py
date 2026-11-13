@@ -327,18 +327,21 @@ def has_active_workflow_run(api_url, owner, repository, ref, token):
     return True
 
 
-def delete_tags(pattern, skip=None):
-    '''Delete tags matching ``pattern``, except those for which the optional callable ``skip`` is true.'''
+def delete_tags(pattern, skip=None, skip_tags=None):
+    '''Delete matching tags, except those selected by the optional ``skip`` or ``skip_tags`` callbacks.
+
+    ``skip`` is called once per tag; ``skip_tags`` is called once with the complete tag list and returns
+    the tags to preserve.
+    '''
     try:
         invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
     except InvokedProcessError:
         _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
         invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
-    tags = invokeGIT(['tag', '--list', pattern]).split('\n')
+    tags = [tag.strip() for tag in invokeGIT(['tag', '--list', pattern]).split('\n') if tag.strip()]
+    skipped_tags = set(skip_tags(tags)) if skip_tags is not None else set()
     for tag in tags:
-        tag = tag.strip()
-        if not tag: continue
-        if skip is not None and skip(tag):
+        if tag in skipped_tags or (skip is not None and skip(tag)):
             _logger.info('🛡 Keeping tag %s', tag)
             continue
         try:

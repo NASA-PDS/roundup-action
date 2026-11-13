@@ -3,7 +3,7 @@
 '''🤠 PDS Roundup — Utilities'''
 
 from .errors import InvokedProcessError, RoundupError
-import subprocess, logging, re, os
+import subprocess, logging, re, os, requests
 
 
 _logger = logging.getLogger(__name__)
@@ -16,6 +16,8 @@ TAG_RE = re.compile(r'^release/(\d+)\.(\d+)(\.(\d+))?')
 RC_TAG_RE = re.compile(r'^release/(\d+)\.(\d+)\.(\d+)-rc\.(\d+)$')
 VERSION_RE = re.compile(r'^v(\d+)\.(\d+)\.(\d+)')
 MULTIPLE_BRANCHES_DOC_URL = 'https://github.com/NASA-PDS/roundup-action#release-tag-found-on-multiple-branches'
+WORKFLOW_RUNS_PER_PAGE = 100
+WORKFLOW_RUNS_MAX_PAGES = 10
 
 
 # Functions
@@ -297,17 +299,52 @@ def contextFactories():
     }
 
 
-def delete_tags(pattern):
-    '''Delete tags matching ``pattern``.'''
+def has_active_workflow_run(api_url, owner, repository, ref, token):
+    '''Tell whether a workflow run for the branch or tag named ``ref`` is still queued or in progress.
+
+    If GitHub cannot be asked, assume there is such a run, since callers use this to decide what is
+    safe to delete.
+    '''
+    url = f'{api_url}/repos/{owner}/{repository}/actions/runs'
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'}
+    try:
+        for page in range(1, WORKFLOW_RUNS_MAX_PAGES + 1):
+            params = {'branch': ref, 'per_page': WORKFLOW_RUNS_PER_PAGE, 'page': page}
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            payload = response.json()
+            runs = payload.get('workflow_runs') if isinstance(payload, dict) else None
+            if not isinstance(runs, list) or not all(isinstance(run, dict) for run in runs):
+                _logger.info('🧐 Unexpected workflow runs listing for %s; assuming one is active', ref)
+                return True
+            if any(run.get('status') != 'completed' for run in runs):
+                return True
+            if len(runs) < WORKFLOW_RUNS_PER_PAGE:
+                return False
+    except (requests.RequestException, ValueError) as ex:
+        _logger.info('🧐 Cannot list workflow runs for %s (%s); assuming one is active', ref, ex)
+        return True
+    _logger.info('🧐 More than %d workflow runs for %s; assuming one is active', WORKFLOW_RUNS_MAX_PAGES * WORKFLOW_RUNS_PER_PAGE, ref)
+    return True
+
+
+def delete_tags(pattern, skip=None, skip_tags=None):
+    '''Delete matching tags, except those selected by the optional ``skip`` or ``skip_tags`` callbacks.
+
+    ``skip`` is called once per tag; ``skip_tags`` is called once with the complete tag list and returns
+    the tags to preserve.
+    '''
     try:
         invokeGIT(['fetch', '--prune', '--unshallow', '--tags', '--prune-tags', '--force'])
     except InvokedProcessError:
         _logger.info('🤔 Unshallow prune fetch tags failed, so trying without unshallow')
         invokeGIT(['fetch', '--prune', '--tags', '--prune-tags', '--force'])
-    tags = invokeGIT(['tag', '--list', pattern]).split('\n')
+    tags = [tag.strip() for tag in invokeGIT(['tag', '--list', pattern]).split('\n') if tag.strip()]
+    skipped_tags = set(skip_tags(tags)) if skip_tags is not None else set()
     for tag in tags:
-        tag = tag.strip()
-        if not tag: continue
+        if tag in skipped_tags or (skip is not None and skip(tag)):
+            _logger.info('🛡 Keeping tag %s', tag)
+            continue
         try:
             _logger.debug('␡ Attempting to delete tag %s', tag)
             invokeGIT(['tag', '--delete', tag])

@@ -230,11 +230,12 @@ class _GitHubReleaseStep(_MavenStep):
         delete_tags('*SNAPSHOT*')
 
     def _prune_release_tags(self):
-        '''Remove all leftover ``release/`` tags that have accrued from older versions of Roundup Action.
+        '''Remove the leftover ``release/`` tags that have accrued from older versions of Roundup Action,
+        keeping any whose own workflow run is still going.
 
         This helps resolve roundup-action#104.
         '''
-        delete_tags('release/*')
+        self.prune_finished_release_tags()
 
     def _tag_release(self):
         _logger.debug('🏷 Tagging the release')

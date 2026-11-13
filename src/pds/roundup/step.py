@@ -4,10 +4,16 @@
 
 from enum import Enum
 from .errors import InvokedProcessError
-from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag
-import logging, github3, tempfile, zipfile, os
+from .util import (
+    git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag, delete_tags,
+    has_active_workflow_run,
+)
+import logging, github3, tempfile, zipfile, os, time
 
 _logger = logging.getLogger(__name__)
+
+# How long to wait before trusting that a release tag has no workflow run in flight
+RUN_VISIBILITY_DELAY_SECONDS = 10
 
 
 class Step(object):
@@ -60,6 +66,34 @@ class Step(object):
     def getOwner(self):
         '''Utility: return the owning user/organization of the repository in use'''
         return self.assembly.context.environ.get('GITHUB_REPOSITORY').split('/')[0]
+
+    def prune_finished_release_tags(self):
+        '''Delete the ``release/*`` tags, except any whose own workflow run has not finished.
+
+        A stable roundup learns its version from its ``release/*`` tag, so deleting that tag while the
+        run is still going makes the run fail. An unstable roundup that started earlier, on a merge to
+        ``main``, can still be pruning at that point.
+        '''
+        environ = self.assembly.context.environ
+        api_url = environ.get('GITHUB_API_URL') or 'https://api.github.com'
+        owner, repository, token = self.getOwner(), self.getRepository(), self.getToken()
+
+        def in_use(tags):
+            active_tags = {
+                tag for tag in tags
+                if has_active_workflow_run(api_url, owner, repository, tag, token)
+            }
+            candidates = [tag for tag in tags if tag not in active_tags]
+            if candidates:
+                # A tag can reach git before GitHub lists its run; wait once before confirming candidates.
+                time.sleep(RUN_VISIBILITY_DELAY_SECONDS)
+                active_tags.update(
+                    tag for tag in candidates
+                    if has_active_workflow_run(api_url, owner, repository, tag, token)
+                )
+            return active_tags
+
+        delete_tags('release/*', skip_tags=in_use)
 
     def get_branch_ref(self):
         '''Utility: get the name of the branch reference for the repository being rounded up'''

@@ -5,6 +5,7 @@
 from enum import Enum
 from .errors import InvokedProcessError
 from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag
+from .util import get_default_branch
 import logging, github3, tempfile, zipfile, os
 
 _logger = logging.getLogger(__name__)
@@ -73,6 +74,21 @@ class Step(object):
             _logger.debug('🔖 GITHUB_REF_NAME "%s" appears to be a tag; resolved to branch "%s"', ref_name, branch)
             return branch
         return ref_name
+
+    def checkout_default_branch(self):
+        '''Utility: make the default branch the working branch, and return its name.
+
+        The next development version must only ever be committed to the default branch, never to the branch
+        being rounded up (e.g., a release branch), which has to keep ending with the stable version commit
+        since that is what gets merged into main. Does nothing if the branch being rounded up already is the
+        default branch.
+        '''
+        default_branch = get_default_branch()
+        if self.get_branch_ref() != default_branch:
+            _logger.debug('🌿 Switching to default branch %s to set the next development version', default_branch)
+            invokeGIT(['fetch', 'origin', default_branch])
+            invokeGIT(['checkout', '-B', default_branch, f'origin/{default_branch}'])
+        return default_branch
 
 
 class StepName(Enum):

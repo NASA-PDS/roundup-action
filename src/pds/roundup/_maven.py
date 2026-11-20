@@ -8,7 +8,6 @@ from .step import ChangeLogStep as BaseChangeLogStep
 from .step import RequirementsStep as BaseRequirementsStep
 from .step import Step, StepName, NullStep, DocPublicationStep
 from .util import invoke, invokeGIT, TAG_RE, get_rc_number, git_config, delete_tags, add_version_label_to_open_bugs
-from .util import get_default_branch
 from lxml import etree
 import logging, os, base64, subprocess, re
 
@@ -389,13 +388,7 @@ class _CleanupStep(_MavenStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         newVersion = f'{major}.{minor}.0-SNAPSHOT'
 
-        # The branch being rounded up (e.g., a release branch) must keep ending with the stable version commit, as
-        # that is what gets merged into main. The next snapshot version goes to the default branch instead.
-        default_branch = get_default_branch()
-        if self.get_branch_ref() != default_branch:
-            _logger.debug('🌿 Switching to default branch %s to set the next snapshot version', default_branch)
-            invokeGIT(['fetch', 'origin', default_branch])
-            invokeGIT(['checkout', '-B', default_branch, f'origin/{default_branch}'])
+        default_branch = self.checkout_default_branch()
 
         _logger.debug('🔖 Setting version %s in the pom', newVersion)
         self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])

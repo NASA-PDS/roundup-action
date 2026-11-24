@@ -2,6 +2,7 @@
 
 '''🤠 PDS Roundup: A step takes you further towards a complete roundup'''
 
+from contextlib import contextmanager
 from enum import Enum
 from .errors import InvokedProcessError
 from .util import git_pull, commit, invoke, invokeGIT, findNextMicro, TAG_RE, VERSION_RE, get_branch_from_tag
@@ -75,20 +76,38 @@ class Step(object):
             return branch
         return ref_name
 
-    def checkout_default_branch(self):
-        '''Utility: make the default branch the working branch, and return its name.
+    @contextmanager
+    def on_default_branch(self):
+        '''Utility: a context manager that makes the default branch the working branch, yields its name, and puts
+        the repository back where it was found when done, even if the work inside fails.
 
         The next development version must only ever be committed to the default branch, never to the branch
         being rounded up (e.g., a release branch), which has to keep ending with the stable version commit
-        since that is what gets merged into main. Does nothing if the branch being rounded up already is the
-        default branch.
+        since that is what gets merged into main. Later steps of the workflow expect the repository to be left on
+        the branch (or detached commit) the action was launched on, so we restore it. Nothing is switched if the
+        branch being rounded up already is the default branch.
         '''
         default_branch = get_default_branch()
-        if self.get_branch_ref() != default_branch:
-            _logger.debug('🌿 Switching to default branch %s to set the next development version', default_branch)
-            invokeGIT(['fetch', 'origin', default_branch])
-            invokeGIT(['checkout', '-B', default_branch, f'origin/{default_branch}'])
-        return default_branch
+        if self.get_branch_ref() == default_branch:
+            yield default_branch
+            return
+
+        original = invokeGIT(['rev-parse', '--abbrev-ref', 'HEAD']).strip()
+        if original == 'HEAD':  # detached, as when a workflow is triggered by a tag
+            original = invokeGIT(['rev-parse', 'HEAD']).strip()
+        _logger.debug('🌿 Switching from %s to default branch %s to set the next development version',
+                      original, default_branch)
+        invokeGIT(['fetch', 'origin', default_branch])
+        invokeGIT(['checkout', '-B', default_branch, f'origin/{default_branch}'])
+        try:
+            yield default_branch
+        finally:
+            _logger.debug('🌿 Switching back to %s', original)
+            try:
+                invokeGIT(['checkout', original])
+            except InvokedProcessError:
+                _logger.exception('Could not switch back to %s after setting the next development version', original)
+                raise
 
 
 class StepName(Enum):

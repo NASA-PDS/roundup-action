@@ -293,10 +293,10 @@ class _CleanupStep(_NodeJSStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         new_version = f'{major}.{minor}.0'
 
-        default_branch = self.checkout_default_branch()
-        _logger.debug('🔖 Setting version %s in package.json', new_version)
-        self.write_version_number(new_version)
-        commit('package.json', f'Setting next dev version to {new_version}', default_branch)
+        with self.on_default_branch() as default_branch:
+            _logger.debug('🔖 Setting version %s in package.json', new_version)
+            self.write_version_number(new_version)
+            commit('package.json', f'Setting next dev version to {new_version}', default_branch)
 
 
 class ChangeLogStep(BaseChangeLogStep):

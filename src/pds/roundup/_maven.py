@@ -388,11 +388,10 @@ class _CleanupStep(_MavenStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         newVersion = f'{major}.{minor}.0-SNAPSHOT'
 
-        default_branch = self.checkout_default_branch()
-
-        _logger.debug('🔖 Setting version %s in the pom', newVersion)
-        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])
-        self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT', default_branch)
+        with self.on_default_branch() as default_branch:
+            _logger.debug('🔖 Setting version %s in the pom', newVersion)
+            self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])
+            self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT', default_branch)
 
 
 class RequirementsStep(_MavenStep, BaseRequirementsStep):

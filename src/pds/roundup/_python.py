@@ -307,13 +307,13 @@ class _CleanupStep(_PythonStep):
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         new_version = f'{major}.{minor}.0'
 
-        default_branch = self.checkout_default_branch()
-        # The default branch may be laid out differently from the branch we rounded up, so look again
-        version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
-        _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
-        with open(version_file, 'w') as f:
-            f.write(f'{new_version}\n')
-        commit(version_file, f'Setting next dev version to {new_version}', default_branch)
+        with self.on_default_branch() as default_branch:
+            # The default branch may be laid out differently from the branch we rounded up, so look again
+            version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
+            _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
+            with open(version_file, 'w') as f:
+                f.write(f'{new_version}\n')
+            commit(version_file, f'Setting next dev version to {new_version}', default_branch)
 
 
 class ChangeLogStep(BaseChangeLogStep):

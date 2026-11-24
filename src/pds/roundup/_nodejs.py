@@ -279,6 +279,11 @@ class _CleanupStep(_NodeJSStep):
             raise RoundupError('🏷 Cannot determine the release tag at cleanup step')
         invokeGIT(['push', 'origin', f':{tag}'])
 
+        # Release candidates are not followed by a new development cycle; leave the branch at the RC version
+        if get_rc_number(tag) is not None:
+            _logger.debug('Skipping next dev version for release candidate %s', tag)
+            return
+
         version = self.read_package_metadata()['version']
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', version)
         if not match:
@@ -287,9 +292,11 @@ class _CleanupStep(_NodeJSStep):
         # NASA-PDS/roundup-action#81: Jordan would prefer the ``minor`` version get bumped, not the ``micro`` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         new_version = f'{major}.{minor}.0'
-        _logger.debug('🔖 Setting version %s in package.json', new_version)
-        self.write_version_number(new_version)
-        commit('package.json', f'Setting next dev version to {new_version}', self.get_branch_ref())
+
+        with self.on_default_branch() as default_branch:
+            _logger.debug('🔖 Setting version %s in package.json', new_version)
+            self.write_version_number(new_version)
+            commit('package.json', f'Setting next dev version to {new_version}', default_branch)
 
 
 class ChangeLogStep(BaseChangeLogStep):

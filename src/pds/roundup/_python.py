@@ -289,6 +289,11 @@ class _CleanupStep(_PythonStep):
             raise RoundupError('🏷 Cannot determine the release tag at cleanup step')
         invokeGIT(['push', 'origin', f':{tag}'])
 
+        # Release candidates are not followed by a new development cycle; leave the branch at the RC version
+        if get_rc_number(tag) is not None:
+            _logger.debug('Skipping next dev version for release candidate %s', tag)
+            return
+
         detective = TextFileDetective(self.assembly.context.cwd)
         version, version_file = detective.detect(), detective.locate_file(self.assembly.context.cwd)
         if not version:
@@ -301,10 +306,14 @@ class _CleanupStep(_PythonStep):
         # NASA-PDS/roundup-action#81: Jordan would prefer the ``minor`` version get bumped, not the ``micro`` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         new_version = f'{major}.{minor}.0'
-        _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
-        with open(version_file, 'w') as f:
-            f.write(f'{new_version}\n')
-        commit(version_file, f'Setting next dev version to {new_version}', self.get_branch_ref())
+
+        with self.on_default_branch() as default_branch:
+            # The default branch may be laid out differently from the branch we rounded up, so look again
+            version_file = TextFileDetective.locate_file(self.assembly.context.cwd)
+            _logger.debug('🔖 Setting version %s in src/…/VERSION.txt', new_version)
+            with open(version_file, 'w') as f:
+                f.write(f'{new_version}\n')
+            commit(version_file, f'Setting next dev version to {new_version}', default_branch)
 
 
 class ChangeLogStep(BaseChangeLogStep):

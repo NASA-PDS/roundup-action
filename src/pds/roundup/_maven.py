@@ -84,10 +84,12 @@ class _MavenStep(Step):
         '''Push the commit made by ``commit_version_bump`` to the branch being rounded up.'''
         self._push_poms()
 
-    def commit_poms(self, message):
-        '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``.'''
+    def commit_poms(self, message, branch=None):
+        '''Commit all poms to the HEAD of main (or whatever branch) with the given ``message``. If ``branch``
+        is given, push to it rather than to the branch being rounded up.
+        '''
         self._commit_poms_locally(message)
-        self._push_poms()
+        self._push_poms(branch)
 
     def _commit_poms_locally(self, message):
         '''Commit all poms to the local repository with the given ``message``, without pushing.'''
@@ -104,8 +106,8 @@ class _MavenStep(Step):
                         _logger.info('🤫 Ignoring ``git add`` on %s', path)
         invokeGIT(['commit', '--allow-empty', '--message', message])
 
-    def _push_poms(self):
-        '''Push the local ``HEAD`` to the branch being rounded up.'''
+    def _push_poms(self, branch=None):
+        '''Push the local ``HEAD`` to ``branch``, or to the branch being rounded up if none is given.'''
         # To resolve #76, @jordnpadams removed the ``--force`` from the git invocation below ↓
         #
         # Which is nice, because it's good to protect the `main` branch from recently made commits
@@ -114,7 +116,7 @@ class _MavenStep(Step):
         # https://github.com/actions/checkout/issues/317
 
         # NASA-PDS/roundup-action#160 — push to the named branch reference
-        invokeGIT(['push', 'origin', f'HEAD:{self.get_branch_ref()}'])
+        invokeGIT(['push', 'origin', f'HEAD:{branch or self.get_branch_ref()}'])
 
 
 class _PreparationStep(Step):
@@ -373,6 +375,11 @@ class _CleanupStep(_MavenStep):
             raise RoundupError('🏷 Cannot determine the release tag at cleanup step')
         invokeGIT(['push', 'origin', f':{tag}'])
 
+        # Release candidates are not followed by a new development cycle; leave the branch at the RC version
+        if get_rc_number(tag) is not None:
+            _logger.debug('Skipping snapshot version bump for release candidate %s', tag)
+            return
+
         pomVersion = self.getVersionFromPOM()
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', pomVersion)
         if not match:
@@ -380,9 +387,11 @@ class _CleanupStep(_MavenStep):
         # NASA-PDS/roundup-action#81: Jordan would prefer the `minor` version get bumped, not the `micro` version:
         major, minor, micro = int(match.group(1)), int(match.group(2)) + 1, int(match.group(3))
         newVersion = f'{major}.{minor}.0-SNAPSHOT'
-        _logger.debug('🔖 Setting version %s in the pom', newVersion)
-        self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])
-        self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT')
+
+        with self.on_default_branch() as default_branch:
+            _logger.debug('🔖 Setting version %s in the pom', newVersion)
+            self.invokeMaven([_backupPomsFlag, f'-DnewVersion={newVersion}', _mavenVersionSetCommand])
+            self.commit_poms(f'Setting snapshot version for {major}.{minor}.{micro}-SNAPSHOT', default_branch)
 
 
 class RequirementsStep(_MavenStep, BaseRequirementsStep):
